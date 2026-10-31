@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.agentid.digest</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/you/dev/agentid-newlaunch/bin/launch.sh</string>
+		<string>bin/blocked-digest.sh</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>3600</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/Users/you/dev/agentid-newlaunch/logs/digest.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/you/dev/agentid-newlaunch/logs/digest.log</string>
+</dict>
+</plist>

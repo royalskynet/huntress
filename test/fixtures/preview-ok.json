@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "data": {
+    "requestId": "req1",
+    "parsedTx": { "transactionType": "ContractCall", "amount": 0 },
+    "simulationResult": { "simulationCode": "000000000", "balanceChanges": [], "allowanceChanges": [], "authorityChanges": [] },
+    "risks": { "riskDetails": [], "addresses": {}, "riskBehaviors": [] },
+    "requireConfirmation": false
+  }
+}

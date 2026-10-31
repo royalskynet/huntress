@@ -1,0 +1,62 @@
+{
+  "dailyMax": 30,
+  "perContractDaily": 1,
+  "denylist": [],
+  "x": {
+    "queries": [
+      "Agent ID free mint",
+      "Agent ID 免费铸造",
+      "Proof of Agent mint"
+    ],
+    "accounts": [
+      "AgentPad_ai",
+      "BinanceWallet",
+      "BuildHundred",
+      "PixelVulpesBNB",
+      "Ptahtrade",
+      "ToolyEVM",
+      "flapdotsh",
+      "fourdotmemezh",
+      "lodepass",
+      "nonceprotocol"
+    ],
+    "priority": [
+      "xxlb_",
+      "XiaoMei_laika",
+      "congge918",
+      "ibtc2023",
+      "Benjieming1Q84"
+    ],
+    "accountsPerRun": 3
+  },
+  "autotrade": {
+    "buy": {
+      "enabled": true,
+      "amountBNB": "0.004",
+      "minHolders": 15,
+      "minProgress": 3,
+      "maxAgeMin": 120,
+      "slippageBps": 2000,
+      "maxOpen": 4,
+      "minWalletBNB": "0.005"
+    },
+    "sell": {
+      "takeProfitX": 2,
+      "stopLossX": 0.5,
+      "maxHoldH": 24,
+      "slippageBps": 2000
+    }
+  },
+  "gasBudgetBNB": "0.0015",
+  "gasReserveBNB": "0.00005",
+  "sellAuto": {
+    "markets": {
+      "0xfad7d1300e43a7b8f0b5a2fe5ef9a306f89c6efc": {
+        "note": "PtahMarket 2026-10-28 實鏈核對"
+      }
+    },
+    "floorRatio": 0.9,
+    "windowHours": 24,
+    "minFills": 10
+  }
+}

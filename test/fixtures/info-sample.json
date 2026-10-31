@@ -1,0 +1,14 @@
+{
+  "code": "000000",
+  "message": null,
+  "messageDetail": null,
+  "data": {
+    "price": "0.000003686602793635841",
+    "liquidity": "453.8661972060605",
+    "marketCap": "3686.6",
+    "holders": "24",
+    "top10HoldersPercentage": "100",
+    "progress": "8.194574"
+  },
+  "success": true
+}

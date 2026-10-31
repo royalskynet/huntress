@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf '%s\n' '{"kind":"free","chainId":"56","targets":[{"to":"0xC84E8281153387e9f35c99cE316075E3c38Dd388"},{"to":"0xe887584746A1375d732854b3B67460a2A73ae0a9","inputData":"zz"},{"to":"0x123"}],"why":"t"}'

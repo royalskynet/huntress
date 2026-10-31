@@ -1,0 +1,187 @@
+{
+  "ok": true,
+  "schema_version": "1",
+  "data": [
+    {
+      "id": "2113349526576939024",
+      "text": "https://t.co/akrRinc7p7",
+      "author": {
+        "id": "414377698",
+        "name": "初白",
+        "screenName": "0xchubai",
+        "profileImageUrl": "https://pbs.twimg.com/profile_images/2109549820386099200/qip4griQ_normal.jpg",
+        "verified": true
+      },
+      "metrics": {
+        "likes": 314,
+        "retweets": 55,
+        "replies": 69,
+        "quotes": 12,
+        "views": 62589,
+        "bookmarks": 340
+      },
+      "createdAt": "Thu Oct 22 19:19:25 +0000 2026",
+      "createdAtLocal": "2026-10-23 03:19",
+      "createdAtISO": "2026-10-22T19:19:25+00:00",
+      "media": [],
+      "urls": [
+        "https://x.com/i/article/2113346370585378816"
+      ],
+      "isRetweet": false,
+      "retweetedBy": null,
+      "lang": "zxx",
+      "score": null,
+      "articleTitle": "币安钱包＋AI打新，傻瓜式教程"
+    },
+    {
+      "id": "2115044265651020211",
+      "text": "https://t.co/xuurVifakb",
+      "author": {
+        "id": "1584151627933458432",
+        "name": "曲奇",
+        "screenName": "0xquqi",
+        "profileImageUrl": "https://pbs.twimg.com/profile_images/1735537222181650432/cBlmz7XO_normal.jpg",
+        "verified": true
+      },
+      "metrics": {
+        "likes": 244,
+        "retweets": 43,
+        "replies": 21,
+        "quotes": 12,
+        "views": 33633,
+        "bookmarks": 343
+      },
+      "createdAt": "Tue Oct 27 11:33:43 +0000 2026",
+      "createdAtLocal": "2026-10-27 19:33",
+      "createdAtISO": "2026-10-27T11:33:43+00:00",
+      "media": [],
+      "urls": [
+        "https://x.com/i/article/2115040787784482816"
+      ],
+      "isRetweet": false,
+      "retweetedBy": null,
+      "lang": "zxx",
+      "score": null,
+      "articleTitle": "教你用AI搭建Binance Agentic Wallet工作台：思路、实操与开源"
+    },
+    {
+      "id": "2115010700125044976",
+      "text": "https://t.co/5TwVXHL66L",
+      "author": {
+        "id": "1475881125553709056",
+        "name": "Scott｜Monsterblockhk",
+        "screenName": "0xScottlai",
+        "profileImageUrl": "https://pbs.twimg.com/profile_images/2107717642228469761/4NmlJ5KU_normal.jpg",
+        "verified": true
+      },
+      "metrics": {
+        "likes": 8,
+        "retweets": 2,
+        "replies": 0,
+        "quotes": 0,
+        "views": 961,
+        "bookmarks": 8
+      },
+      "createdAt": "Tue Oct 27 09:20:20 +0000 2026",
+      "createdAtLocal": "2026-10-27 17:20",
+      "createdAtISO": "2026-10-27T09:20:20+00:00",
+      "media": [],
+      "urls": [
+        "https://x.com/i/article/2115004159183532032"
+      ],
+      "isRetweet": false,
+      "retweetedBy": null,
+      "lang": "zxx",
+      "score": null,
+      "articleTitle": "幣安 Agentic Wallet × Grok Bot 完整教學：設定內盤買賣規則、弄好 Telegram 通知"
+    },
+    {
+      "id": "2114920556651073909",
+      "text": "一觉睡醒，又监控到 22 个币安 Agent ID 可免费铸造的项目。\n\n免费的才是最香的，仅 Gas 费，几乎零成本。\n\n丢给你的 Agent ，顺手铸造下，可能会有惊喜。\n\n1⃣Black Hole \n1 万枚程序生成黑洞 NFT，每钱包前 2 张免费\n合约：0xC84E8281153387e9f35c99cE316075E3c38Dd388\n官网：https://t.co/LZYKv1vh9R \n\n2⃣LeadLoop\nAgent 生态像素角色 NFT，每钱包可免 2 张\n合约：0xe887584746A1375d732854b3B67460a2A73ae0a9\n官网：https://t.co/rJGWlrbh0C\n\n3⃣UMBRA Agents\nAgent 主题收藏，首张免费（总量 3000）\n合约：0x9C0309dC71F89d7f4F0b55d934213C28F10C9e23\n\n4⃣AGENT ID card\n链上 Agent 身份卡 NFT，每钱包首张免费\n合约：0x486d0947cAa3d70c19e38f6C789489d39291E9e7\n\n5⃣Xuanwu Seed\n玄武种子 ERC1155，每钱包首枚免费\n合约：\n0x05fd19702029c473683d6188cD856e59038278F4\n官网：https://t.co/S7O9JciTs7\n\n6⃣Brushborn\nAgent 可铸艺术向 NFT，每钱包 1 张免费\n合约： 0x5d43566e40E2e6D396EC10224363E5cAcFc40Cf0\n官网： https://t.co/CuNGxondfR \nX： @BrushbornBNB\n\n7⃣Sonic Protocol\n声音卡 Tone，免费池限量，每 Agent 可免 1 次\n合约： 0xEe581c7D13cfF5c4E34a662ba521C0d3C63EFb6d\n\n8⃣Agent (AGENT)\n公平发射代币，每 Agent 可免领 9000 枚\n合约： 0xA2643B889eEb232708a644f15f70f951773dDEF9\n官网：https://t.co/sPzdGLQk9n\nX：@Agentbnbai \n\n9⃣Bound Agents\nAgent 绑定向 NFT，每钱包首张免费\n合约： 0xa75526d63bd5E3b3e8A65a5f2efEF45072904d04\n\n🔟Botmolt\nAgent 主题 NFT，每钱包首张免费\n合约： 0x4A15F38c75E529205a45BD2eE57c02AFAB2F6569\n\n1⃣1⃣OTV\n链上短视频向 NFT，全局免费池紧\n合约： 0xFaB9c88d25e111edd68A2CCa3e0f650863A5BF25\n官网： https://t.co/rMc3VqlHcs\nX：@OTV_NFT\n\n1⃣2⃣PIXEL SHIBA CLUB\n像素柴犬，每钱包前 4 次免费\n合约： 0xFdD6C5fF6dAbFF40cb27B39D72E5C9517Af27Fdc\n官网： https://t.co/n95a3FFeYL\n\n1⃣3⃣Noir Brokers\n黑色经纪主题 Agent NFT，每钱包首张免费\n合约： 0xAfE2Becdf86826d4b4341de80a0eb2E98Eec5B02\n官网：https://t.co/SUdSLtxyvj\n\n1⃣4⃣Floppy Agents\n软盘风 Agent NFT，严格 0 价 1 张/钱包\n合约： 0x8F1E4787f131990d793Af253d118aed7Fe1B29AF\n官网：https://t.co/m3ixe14aiC\nX：@Floppyagents \n\n1⃣5⃣AgentPad Pass\nAgentPad 通行凭证，claim 开放中\n合约： 0xf66fbea12f23D9928D9032bb258Fbc25203957A0\n官网：https://t.co/xhdMydjCsJ\n\n1⃣6⃣AISNACK\nSnack 向代币，Phase1 免费 claim（约至 10-28 08:00 上海时）\n合约： 0x4903Ce0f68f763B8EdBB80A6E9E836373d3190C8\n官网：https://t.co/zuA6XpV3jd\nX：@thevayne666\n\n1⃣7⃣Lodepass\n.ai Agent 挖矿通行证，每钱包 1 张免费\n合约： 0x31b074C8e77e44F29df285F19d4fc76E6D927d01\n官网：https://t.co/CNM7CZOh9v\nX：@lodepass\n\n1⃣8⃣ danta 蛋塔\n蛋塔主题 NFT，免费池接近打满\n合约： 0xcEebc883f922b861841c3e5E47aEb55D3C6f13e9\n官网：https://t.co/YVUVKrbFJQ\nX：@dantapixelnft \n\n1⃣9⃣PixelVulpes\n3333 只像素狐狸，每 Agent ID 首只免费\n合约： 0x9134AE94Ab0739CF0E0F4F5e9CacFa5e1D029b0C\n官网：https://t.co/LNOwXErRcZ\nX：@PixelVulpesBNB\n\n2⃣0⃣Alibaba & The 70 Thieves\n阿里巴巴主题 Agent NFT，freeMint 开放中\n合约：0xA2F2ffCA66D324af5ED58e5c98c9D6f544b13303\n\n2⃣1⃣Agent Periodic Lab\n元素周期表卡牌，新 Agent 可免费首铸\n合约： 0xfE5Ab5ce9b1D86a55d70E7D0573a14D559029C18\n官网：https://t.co/pJtk4P0cai\nX：@BuildHundred\n\n2⃣2⃣BeHand Pass\nBeHand 通行证，claim 需 Agent ID\n合约： 0xCd4Af5a9eDE5ef6f5138028AdC9C152a1Acb80ed\n官网：https://t.co/dWZr9qhKWD \n\n发给 Agent 铸造提示词：\n用币安 Agentic Wallet（baw）在 BSC 按下方清单逐个免费铸造/领取。\n\n规则（每条都遵守）：\n1. 仅打严格免费档（mint/claim 的 value 必须为 0，gas 除外）；不要付费加铸。\n2. 每个合约：先 baw contract-call preview，确认无扣款、无多余授权、无恶意风险后，再 execute。\n3. 成功把完整合约地址 + txHash 发我；失败/额度满/要付费/报错则跳过该条并说明原因，继续下一条。\n4. 需已持有 .ai Agent ID，Developer Mode 已开；未登录先停下来让我扫码登录。\n5. 不要对清单外的合约操作；不要 swap/授权无关 spender。\n\nTips：以上所有项目均为监控扫描到的，新项目是有风险的，铸造前一定要让你的 Agent做好检查，DYOR。",
+      "author": {
+        "id": "369732811",
+        "name": "聪哥.sats",
+        "screenName": "congge918",
+        "profileImageUrl": "https://pbs.twimg.com/profile_images/1954046716459823104/Ag2kqiuW_normal.jpg",
+        "verified": true
+      },
+      "metrics": {
+        "likes": 685,
+        "retweets": 106,
+        "replies": 90,
+        "quotes": 19,
+        "views": 135891,
+        "bookmarks": 949
+      },
+      "createdAt": "Tue Oct 27 03:22:08 +0000 2026",
+      "createdAtLocal": "2026-10-27 11:22",
+      "createdAtISO": "2026-10-27T03:22:08+00:00",
+      "media": [
+        {
+          "type": "photo",
+          "url": "https://pbs.twimg.com/media/HVm0fesaQAAU3tU.png",
+          "width": 736,
+          "height": 828
+        }
+      ],
+      "urls": [
+        "https://blackhole-nft.pages.dev"
+      ],
+      "isRetweet": false,
+      "retweetedBy": null,
+      "lang": "zh",
+      "score": null,
+      "quotedTweet": {
+        "id": "2114687741686620608",
+        "text": "配置的监控刚扫到了 5 个币安 Agent ID 可以免费铸造的项目。\n\n只需要 Gas 费就能领取，可以顺手领下，DYOR：\n\n1⃣Subsonic Tribe\n官推： @Subsonictribe\n完整合约：0x65DDB3E337c12E5964ead6Cb9b6469203EF4caf1\n项目定位：BNB 链上「声浪生物」NFT，总量 2,222，仅 AI Agent 可铸。\n当前机会：前 1,111 个钱包首枚免费；之后约 0.0005 BNB。持有 5 枚可免费领 Tribe Chief）。\nAgent 铸造提示词：\n用我的币安 Agentic Wallet 在 BSC免费铸 1 个 Subsonic Tribe。合约0x65DDB3E337c12E5964ead6Cb9b6469203EF4caf1\n先只读确认我持有 .ai Agent ID，且本钱包还能免费 mint；确认 mint 价格严格为 0 。\n\nTips：项目仅个人参与分享，非任何投资建议，DYOR。",
+        "author": {
+          "screenName": "congge918",
+          "name": "聪哥.sats"
+        }
+      }
+    },
+    {
+      "id": "2115049340163252309",
+      "text": "围绕币安 Agent ID 的项目开始井喷了！\n\n一下午的时间，监控又抓到了 41 个新的免费铸造项目。\n\n大部分都是模板盘，所以让 Bot 筛选出前 10 个有热度/辨识度的项目。\n\n感兴趣的可以顺手打一下，都是免费铸造，只有 Gas 费。\n\n1⃣HashDroids Operator Pass\n多阶段链游通行证（PoW/Titan/Synthesis），Agent ID 生态；已铸约 1042 张通行证。\n合约：0x0EED2C5e866A3792f587CAf0839941EA57fe6915\n官网：https://t.co/ueGxiqUi5d\nX：@hashdroids\n\n2⃣Onchain Plants\n全链上 SVG 成长植物 NFT，最长持有者奖池；总量 5555，已铸约 2897。\n合约：0x9c0635e0ea16efff7ad6adffd46599d9adfc076e\n官网：https://t.co/JsyXxugmr8\nX：@ToolyEVM\n\n3⃣Coracle Agents\n航行主题 Agent NFT；首 2 张 gas only，总量 10000，已铸约 1469。\n合约：0x2FCefA216dA37751E102399aCbe1dCC86Dc96eCf\n官网：https://t.co/pAQsIltr7W\nX：@CoracleAgents\n\n4⃣CatalystLabsX\n像素小猫礼盒风格 Agent NFT；总量 10000，已铸约 1230。\n合约：0xde4db9388297e65a758a1daf116368ffc4f9e475\n\n5⃣Agentlings\n像素特工宠 + 合成玩法；当日独立介绍帖，已铸约 528。\n合约：0xbf3488e453c68e9771c26d448e99d0ec5395135f\n\n6⃣Entr0pic Noise\n生成艺术 Noise NFT；免费合约总量 3333（mint 已关，已铸约 297）。\n合约：0x8624E24604D2177d127978f15B1c898853A4F6f8\n官网：https://t.co/t0uDkADCkf\nX：@entr0picom\n\n7⃣Gloomies\nAgent 生态情绪角色 NFT；总量 4000，已铸约 1907。\n合约：0xaf19cb4eb0779f051876d1756e98282f170a4516\n\n8⃣Hexagons\n六边形几何 NFT；总量 999，已铸约 644。\n合约：0xe367dbF7f96F998239F495E80d90BF07ebD40D7E\n\n9⃣Special Agent\n特工主题 Agent NFT；总量 3000，已铸约 2533）\n合约：0xcf939bbb0630e4b51bb2e64f9a839820ea96412f\n\n🔟Night Shift Agents\n夜班主题 Agent NFT；总量 10000，已铸约 2232。\n合约：0x427aed3f7427b48e45f5e648105aa1b77724cf14\n\n👇可发给 Agent 的铸造提示词参考：\n你是币安 Agentic Wallet 执行 Agent。按下列规则处理下方项目列表，逐个完成；不要问我确认免费项。\n\n总规则（必须遵守）\n1、仅铸造 严格 0 价（value=0 / quote=0）；gas 可付。标「免费」但仍收 BNB/手续费的 一律跳过，并回报原因。\n2、每个合约先 baw contract-call preview，再决定是否 execute：\n- 预演成功，且 无恶意扣款、无多余授权、无异常风险 → 自动 execute\n- 预演失败 / 有扣款 / 有多余授权 / 有风险 → 中止该条，立刻回报，不要强行打。\n3、已持有 / 免费额度已用完 / mint 已关闭 → 跳过并注明。\n4、成功必须回报：项目名、合约、方法、tokenId、完整 txHash。\n5、任何付费铸造禁止自动执行；若发现非 0 价，只说明价格与方法，等我发「确认买入 XX 金额」再说。\n6、钱包需已 CONNECTED；未登录先提醒扫码登录，不要盲打。\n\nTips：以上所有项目均为个人 BOT 监控扫描到的免费铸造项目，新项目都是有潜在风险的，铸造前一定要让你的 Agent 做好安全检查，DYOR。",
+      "author": {
+        "id": "369732811",
+        "name": "聪哥.sats",
+        "screenName": "congge918",
+        "profileImageUrl": "https://pbs.twimg.com/profile_images/1954046716459823104/Ag2kqiuW_normal.jpg",
+        "verified": true
+      },
+      "metrics": {
+        "likes": 176,
+        "retweets": 27,
+        "replies": 38,
+        "quotes": 7,
+        "views": 22020,
+        "bookmarks": 165
+      },
+      "createdAt": "Tue Oct 27 11:53:53 +0000 2026",
+      "createdAtLocal": "2026-10-27 19:53",
+      "createdAtISO": "2026-10-27T11:53:53+00:00",
+      "media": [
+        {
+          "type": "photo",
+          "url": "https://pbs.twimg.com/media/HVop23DagAAVLRP.jpg",
+          "width": 914,
+          "height": 1031
+        }
+      ],
+      "urls": [],
+      "isRetweet": false,
+      "retweetedBy": null,
+      "lang": "zh",
+      "score": null,
+      "quotedTweet": {
+        "id": "2114920556651073909",
+        "text": "一觉睡醒，又监控到 22 个币安 Agent ID 可免费铸造的项目。\n\n免费的才是最香的，仅 Gas 费，几乎零成本。\n\n丢给你的 Agent ，顺手铸造下，可能会有惊喜。\n\n1⃣Black Hole \n1 万枚程序生成黑洞 NFT，每钱包前 2 张免费\n合约：0xC84E8281153387e9f35c99cE316075E3c38Dd388\n官网：https://t.co/LZYKv1vh9R \n\n2⃣LeadLoop\nAgent 生态像素角色 NFT，每钱包可免 2 张\n合约：0xe887584746A1375d732854b3B67460a2A73ae0a9\n官网：https://t.co/rJGWlrbh0C\n\n3⃣UMBRA Agents\nAgent 主题收藏，首张免费（总量 3000）\n合约：0x9C0309dC71F89d7f4F0b55d934213C28F10C9e23\n\n4⃣AGENT ID card\n链上 Agent 身份卡 NFT，每钱包首张免费\n合约：0x486d0947cAa3d70c19e38f6C789489d39291E9e7\n\n5⃣Xuanwu Seed\n玄武种子 ERC1155，每钱包首枚免费\n合约：\n0x05fd19702029c473683d6188cD856e59038278F4\n官网：https://t.co/S7O9JciTs7\n\n6⃣Brushborn\nAgent 可铸艺术向 NFT，每钱包 1 张免费\n合约： 0x5d43566e40E2e6D396EC10224363E5cAcFc40Cf0\n官网： https://t.co/CuNGxondfR \nX： @BrushbornBNB\n\n7⃣Sonic Protocol\n声音卡 Tone，免费池限量，每 Agent 可免 1 次\n合约： 0xEe581c7D13cfF5c4E34a662ba521C0d3C63EFb6d\n\n8⃣Agent (AGENT)\n公平发射代币，每 Agent 可免领 9000 枚\n合约： 0xA2643B889eEb232708a644f15f70f951773dDEF9\n官网：https://t.co/sPzdGLQk9n\nX：@Agentbnbai \n\n9⃣Bound Agents\nAgent 绑定向 NFT，每钱包首张免费\n合约： 0xa75526d63bd5E3b3e8A65a5f2efEF45072904d04\n\n🔟Botmolt\nAgent 主题 NFT，每钱包首张免费\n合约： 0x4A15F38c75E529205a45BD2eE57c02AFAB2F6569\n\n1⃣1⃣OTV\n链上短视频向 NFT，全局免费池紧\n合约： 0xFaB9c88d25e111edd68A2CCa3e0f650863A5BF25\n官网： https://t.co/rMc3VqlHcs\nX：@OTV_NFT\n\n1⃣2⃣PIXEL SHIBA CLUB\n像素柴犬，每钱包前 4 次免费\n合约： 0xFdD6C5fF6dAbFF40cb27B39D72E5C9517Af27Fdc\n官网： https://t.co/n95a3FFeYL\n\n1⃣3⃣Noir Brokers\n黑色经纪主题 Agent NFT，每钱包首张免费\n合约： 0xAfE2Becdf86826d4b4341de80a0eb2E98Eec5B02\n官网：https://t.co/SUdSLtxyvj\n\n1⃣4⃣Floppy Agents\n软盘风 Agent NFT，严格 0 价 1 张/钱包\n合约： 0x8F1E4787f131990d793Af253d118aed7Fe1B29AF\n官网：https://t.co/m3ixe14aiC\nX：@Floppyagents \n\n1⃣5⃣AgentPad Pass\nAgentPad 通行凭证，claim 开放中\n合约： 0xf66fbea12f23D9928D9032bb258Fbc25203957A0\n官网：https://t.co/xhdMydjCsJ\n\n1⃣6⃣AISNACK\nSnack 向代币，Phase1 免费 claim（约至 10-28 08:00 上海时）\n合约： 0x4903Ce0f68f763B8EdBB80A6E9E836373d3190C8\n官网：https://t.co/zuA6XpV3jd\nX：@thevayne666\n\n1⃣7⃣Lodepass\n.ai Agent 挖矿通行证，每钱包 1 张免费\n合约： 0x31b074C8e77e44F29df285F19d4fc76E6D927d01\n官网：https://t.co/CNM7CZOh9v\nX：@lodepass\n\n1⃣8⃣ danta 蛋塔\n蛋塔主题 NFT，免费池接近打满\n合约： 0xcEebc883f922b861841c3e5E47aEb55D3C6f13e9\n官网：https://t.co/YVUVKrbFJQ\nX：@dantapixelnft \n\n1⃣9⃣PixelVulpes\n3333 只像素狐狸，每 Agent ID 首只免费\n合约： 0x9134AE94Ab0739CF0E0F4F5e9CacFa5e1D029b0C\n官网：https://t.co/LNOwXErRcZ\nX：@PixelVulpesBNB\n\n2⃣0⃣Alibaba & The 70 Thieves\n阿里巴巴主题 Agent NFT，freeMint 开放中\n合约：0xA2F2ffCA66D324af5ED58e5c98c9D6f544b13303\n\n2⃣1⃣Agent Periodic Lab\n元素周期表卡牌，新 Agent 可免费首铸\n合约： 0xfE5Ab5ce9b1D86a55d70E7D0573a14D559029C18\n官网：https://t.co/pJtk4P0cai\nX：@BuildHundred\n\n2⃣2⃣BeHand Pass\nBeHand 通行证，claim 需 Agent ID\n合约： 0xCd4Af5a9eDE5ef6f5138028AdC9C152a1Acb80ed\n官网：https://t.co/dWZr9qhKWD \n\n发给 Agent 铸造提示词：\n用币安 Agentic Wallet（baw）在 BSC 按下方清单逐个免费铸造/领取。\n\n规则（每条都遵守）：\n1. 仅打严格免费档（mint/claim 的 value 必须为 0，gas 除外）；不要付费加铸。\n2. 每个合约：先 baw contract-call preview，确认无扣款、无多余授权、无恶意风险后，再 execute。\n3. 成功把完整合约地址 + txHash 发我；失败/额度满/要付费/报错则跳过该条并说明原因，继续下一条。\n4. 需已持有 .ai Agent ID，Developer Mode 已开；未登录先停下来让我扫码登录。\n5. 不要对清单外的合约操作；不要 swap/授权无关 spender。\n\nTips：以上所有项目均为监控扫描到的，新项目是有风险的，铸造前一定要让你的 Agent做好检查，DYOR。",
+        "author": {
+          "screenName": "congge918",
+          "name": "聪哥.sats"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "code": "000000",
+  "message": null,
+  "messageDetail": null,
+  "data": {
+    "requestId": "11111111-2222-4333-8444-555555555555",
+    "hasResult": true,
+    "isSupported": true,
+    "riskLevelEnum": "HIGH",
+    "riskLevel": 5,
+    "extraInfo": {
+      "buyTax": "5",
+      "sellTax": "99",
+      "isVerified": false
+    },
+    "riskItems": [
+      {
+        "id": "CONTRACT_RISK",
+        "name": "Contract Risk",
+        "details": [
+          {
+            "title": "Honeypot Risk Detected",
+            "description": "A honeypot is a token that can be bought but not sold",
+            "isHit": true,
+            "riskType": "RISK"
+          },
+          {
+            "title": "Mintable Not Detected",
+            "description": "Mintable function means token total supply can be increased",
+            "isHit": false,
+            "riskType": "CAUTION"
+          }
+        ]
+      }
+    ]
+  },
+  "success": true
+}
