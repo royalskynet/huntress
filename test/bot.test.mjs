@@ -95,3 +95,20 @@ test("/buy 找得到候選才 prepare，金額照使用者打的", async () => {
   assert.equal(calls.buy.length, 1);
   assert.equal(calls.ask.length, 0);
 });
+
+test("/pnl 回報 24h 與全期戰績", async () => {
+  const { calls, deps, stateDir } = mk();
+  mkdirSync(stateDir, { recursive: true });
+  const N = Date.now();
+  writeFileSync(join(stateDir, "positions.json"), JSON.stringify({
+    positions: { a: {} },
+    closed: [
+      { origCostWei: "4000000000000000", costWei: "2000000000000000", proceedsWei: "6000000000000000", closedAt: N },
+      { costWei: "1000000000000000", proceedsWei: "500000000000000", closedAt: N - 25 * 3600 * 1000 },
+    ],
+  }));
+  await handleUpdate(msg("/pnl"), deps);
+  assert.equal(calls.send.length, 1);
+  assert.match(calls.send[0].text, /24h/);
+  assert.match(calls.send[0].text, /全期/);
+});

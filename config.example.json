@@ -29,6 +29,10 @@
     ],
     "accountsPerRun": 3
   },
+  "paidShadow": {
+    "enabled": false,
+    "live": false
+  },
   "autotrade": {
     "buy": {
       "enabled": true,

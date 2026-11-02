@@ -91,12 +91,13 @@ TMTN 會預先大額授權求快；本方案不抄，要賣那一輪才 approve�
 1. **A＋B**：`node --test test/autotrade.test.mjs` 新增第 5 盤被拒、餘額 0.008 被拒、餘額讀不到被拒；邏輯改錯要 fail。上線後 Four 專區就照新限額跑（門檻不變）。
 2. **第 0 階段**：上面的唯讀 quote 指令 rc=0，且錢包 nonce 前後不變。
 3. **C＋D＋E**：fake-baw 測試，買／claim／approve／賣各一正一反例；無限 approve 必拒。
-4. **影子跑 24h**：`AUTOTRADE_DRY=1` 照常篩選、preview，不 execute；「本來會買」記 `logs/shadow.jsonl`，24h 後對照價格算假想損益推 TG。
-5. **上線**：第 4 步至少 1 筆「本來會買」且無閘誤放，才關 DRY 開始花錢。
+4. **影子（筆數門檻，不綁時間）**：`config.paidShadow.enabled=true` 照常篩選、preview，不 execute；「本來會買」記 `logs/shadow.jsonl`，每筆滿 `checkAfterMin` 後對照 `quoteBuy` 份額換算倍數寫 `logs/shadow-check.jsonl`。
+5. **上線**：命中 **≥5 筆**（不分天數；先探針估流量，估得到就同時開）且無閘誤放，才上最小額實單。上線以 0.004 BNB／筆、同時 4 盤為上限，最多虧 0.016 BNB（約 12 美元）；前幾筆是市場衝擊與 preview 份額對不上的實測，不以獲利為判準。
+   原「24h／至少 1 筆」撤回（2026-11-02 wheel 卡）：10-28 一次 30 分鐘影子 0 筆，擋下盤 928 盤次全是篩選（非 BNB 522、曲線不符 406），24h 只會把「0 筆」拉長。
 
 ## 已知風險（照收）
 
-- 獲利個案都是自述，無交易哈希；冷開勝率查無統計，第 4 步影子跑是唯一勝率依據。
+- 獲利個案都是自述，無交易哈希；冷開勝率查無統計；影子驗不到曲線期市價衝擊與 preview 份額偏差，上線最小額實單才是唯一真實驗證。
 - Flap 合約皆 proxy，可被升級；介面變了 → preview 失敗 → 不買（fail-closed）。
 - Dev Mode 7 天無外部交易自動關；Dev Mode 日額 20U 夠用（4 盤約 12 美元）。
 

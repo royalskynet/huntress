@@ -7,6 +7,7 @@ export QUEUE_DIR=$T/q STATE_DIR=$T/s LOG_DIR=$T/l CONFIG=$PWD/config.example.jso
 export MEMERUSH_FIXTURE=test/fixtures/memerush.json TWITTER_BIN=test/fake-twitter.sh TRIAGE_CMD=test/fake-llm-ok.sh
 export FAKE_PREVIEW=test/fixtures/preview-ok.json AUDIT_FIXTURE=test/fixtures/audit-honeypot.json INFO_FIXTURE=test/fixtures/info-sample.json
 export AUTOTRADE_ROWS=test/fixtures/autotrade-rows-empty.json
+export BRIEF_DIR=$T/brief
 export X_EVERY_RUN=1 TG_DRY=1 TG_BOT_TOKEN=x TG_CHAT_ID=1
 FAKE_BAL=0.06 bash run.sh
 [ -e $T/s/PAUSED ]

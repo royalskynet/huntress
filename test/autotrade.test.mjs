@@ -4,14 +4,15 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runOnce, screen, decide, sellGate, approveGate, toWei, fromWei, DEFAULTS } from "../src/autotrade.mjs";
+import { runOnce, screen, decide, sellGate, approveGate, toWei, fromWei, DEFAULTS, backoffMs, applySell, devReject } from "../src/autotrade.mjs";
 
 const T = "0x2754803efccc7d808bba1a120cbfcbab80feffff";
 const T2 = "0x3333333333333333333333333333333333333333";
 const CORE = "0xebe7b6c1089d9f72ad07f34e36d898e44e5e27f3";
 const NATIVE = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const NOW = 1793150000000;
-const row = (o = {}) => ({ contractAddress: T, symbol: "4Agent", holders: 20, progress: "5", devPosition: 1, createTime: NOW - 30 * 60000, ...o });
+const D = "0x1111111111111111111111111111111111111111";
+const row = (o = {}) => ({ contractAddress: T, symbol: "4Agent", holders: 20, progress: "5", devPosition: 1, createTime: NOW - 30 * 60000, devAddress: D, devSellPercent: 0, ...o });
 // 10-28 實測真錢包 preview 結構（requestId 為假）
 const pv = (bc, o = {}) => ({ success: true, data: { requestId: "rq1", parsedTx: { transactionType: "ContractInteraction" }, simulationResult: { balanceChanges: bc, simulationCode: "000000000", authorityChanges: [], allowanceChanges: [], ...o }, risks: { addresses: {}, riskDetails: [], riskBehaviors: [] }, requireConfirmation: false } });
 const buyPv = (tok = T) => pv([{ contractAddress: NATIVE, change: -2999999880268045, tokenType: "Native" }, { contractAddress: tok, change: 2.27e23, tokenType: "Erc20" }]);
@@ -89,7 +90,7 @@ test("audit 命中 → 不買；audit 取不到 → 這輪跳過不標記", asyn
 });
 
 test("每日 4 筆封頂、每輪最多 1 筆", async () => {
-  const rows = [0, 1, 2, 3, 4].map((i) => row({ contractAddress: `0x${String(i).repeat(40)}` }));
+  const rows = [0, 1, 2, 3, 4].map((i) => row({ contractAddress: `0x${String(i).repeat(40)}`, devAddress: `0x${String(i + 1).repeat(40)}` }));
   const { deps, execs } = mk({ deps: { rows: async () => rows }, preview: (a) => buyPv(a[a.indexOf("--to") + 1] === CORE ? null : null) });
   // 讓 buyLooksRight 對每顆都成立：preview 回傳收到的就是當輪 quote 的 token
   let cur;
@@ -102,15 +103,16 @@ test("每日 4 筆封頂、每輪最多 1 筆", async () => {
   assert.equal(execs(), 4);
 });
 
-test("賣出規則：2 倍賣一半、跌半全賣、超時全賣", () => {
+test("賣出規則：分批停利、停損、超時全賣", () => {
   const c = DEFAULTS.sell;
+  const R = 10n ** 21n;
   const pos = { costWei: "3000000000000000", boughtAt: NOW, soldHalf: false };
-  assert.deepEqual(decide(pos, 6000000000000000n, c, NOW)[0], "half");
-  assert.deepEqual(decide({ ...pos, soldHalf: true }, 6000000000000000n, c, NOW)[0], null);
-  assert.deepEqual(decide(pos, 1500000000000000n, c, NOW)[0], "all");
-  assert.deepEqual(decide(pos, 3000000000000000n, c, NOW)[0], null);
-  assert.deepEqual(decide(pos, null, c, NOW + 24 * 3600e3)[0], "all");
-  assert.deepEqual(decide(pos, null, c, NOW)[0], null);
+  assert.equal(decide(pos, 6000000000000000n, R, c, NOW)[0], 5000);
+  assert.equal(decide({ ...pos, soldHalf: true, tierIdx: 1, costWei: "1500000000000000" }, 15000000000000000n, R, c, NOW)[0], 4000);
+  assert.equal(decide(pos, 1500000000000000n, R, c, NOW)[0], "all");
+  assert.equal(decide(pos, 3000000000000000n, R, c, NOW)[0], null);
+  assert.equal(decide(pos, null, R, c, NOW + 24 * 3600e3)[0], "all");
+  assert.equal(decide(pos, null, R, c, NOW)[0], null);
 });
 
 test("sellGate：只准減少這顆幣、收到 BNB", () => {
@@ -198,3 +200,278 @@ test("餘額讀不到不買", async () => {
     assert.equal(execs(), 0);
   }
 });
+
+test("外盤：quote 失敗不 swap、swap 帶 --slippage 15", async () => {
+  const { deps, calls } = mk({ deps: { rows: async () => [] } });
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: { [T]: { symbol: "4Agent", costWei: "1000000000000000", boughtAt: NOW - 3600e3, soldHalf: false } }, rejected: {}, closed: [] }));
+  deps.script = (cmd, p) => (cmd === "info" ? { success: true, data: { route: "market-order", isAgentIdExclusive: true, wallet: { tokenBalance: "1.5", tokenBalanceRaw: "1500000000000000000" } } } : { success: true, data: {} });
+  // quote 失敗 → 不 swap
+  deps.baw = (a) => { calls.baw.push(a.join(" ")); if (a[1] === "quote") return { success: false, error: "no" }; if (a[1] === "swap") return { success: true, data: { orderId: "o1" } }; return {}; };
+  await runOnce(deps);
+  assert.equal(calls.baw.some((c) => c.includes("swap")), false);
+  // 清掉退避，quote 成功 → swap 帶 --slippage 15
+  const stObj = JSON.parse(readFileSync(join(deps.stateDir, "positions.json"), "utf8"));
+  delete stObj.positions[T].sellFail;
+  writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify(stObj));
+  deps.baw = (a) => { calls.baw.push(a.join(" ")); if (a[1] === "quote") return { success: true, data: { toCoinSymbol: "BNB", toCoinAmount: "0.003" } }; if (a[1] === "swap") return { success: true, data: { orderId: "o2" } }; return {}; };
+  await runOnce(deps);
+  const swapCall = calls.baw.find((c) => c.includes("swap"));
+  assert.ok(swapCall && swapCall.includes("--slippage 15"));
+});
+
+test("退避：失敗後 1 分鐘內不重試、成功清掉 sellFail", async () => {
+  let execOk = false;
+  const { deps, calls, st } = mk({
+    deps: { rows: async () => [] },
+    preview: () => sellPv(),
+    script: {
+      info: () => ({ success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "200000", tokenBalanceRaw: "200000000000000000000000" } } }),
+      "quote-sell": () => ({ success: true, data: { estimate: { userReceives: "0.0035" }, contracts: { core: CORE }, approveTx: null, tx: { to: CORE, value: "0", inputData: "0xsell" } } }),
+    },
+  });
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: { [T]: { symbol: "4Agent", costWei: "1000000000000000", boughtAt: NOW - 3600e3, soldHalf: false } }, rejected: {}, closed: [] }));
+  deps.baw = (a) => { calls.baw.push(a.join(" ")); if (a[1] === "preview") return sellPv(); if (a[1] === "execute") { if (!execOk) return { success: false, error: "x" }; return { success: true, data: { txHash: "0xdead" } }; } return {}; };
+  await runOnce(deps);
+  const execCount1 = calls.baw.filter((c) => c.includes("execute")).length;
+  assert.equal(execCount1, 1);
+  // 1 分鐘內不重試
+  await runOnce(deps);
+  const execCount2 = calls.baw.filter((c) => c.includes("execute")).length;
+  assert.equal(execCount2, execCount1);
+  assert.ok(st().positions[T].sellFail);
+  // 時間過後成功清掉 sellFail
+  execOk = true;
+  deps.now = NOW + 61000;
+  await runOnce(deps);
+  assert.equal(calls.baw.filter((c) => c.includes("execute")).length, 2);
+  assert.equal(st().positions[T]?.sellFail, undefined);
+});
+
+test("零頭：不賣且 dust 不佔 maxOpen", async () => {
+  const { deps, execs, calls } = mk();
+  const { writeFileSync, readFileSync } = await import("node:fs");
+  writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: { [T]: { symbol: "4Agent", costWei: "3000000000000000", boughtAt: NOW - 25 * 3600e3, soldHalf: false } }, rejected: {}, closed: [] }));
+  deps.script = (cmd, p) => {
+    if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "100", tokenBalanceRaw: "100000000000000000" } } };
+    if (cmd === "quote-sell") return { success: true, data: { estimate: { userReceives: "0.0001" }, contracts: { core: CORE }, approveTx: null, tx: { to: CORE, value: "0", inputData: "0xsell" } } };
+    if (cmd === "quote-buy") return { success: true, data: { tx: tx(), simulation: { ok: true }, minTokenOut: "1", slippagePercent: "20" } };
+    return { success: true, data: {} };
+  };
+  deps.baw = (a) => { calls.baw.push(a.join(" ")); if (a[1] === "preview") { const v = a[a.indexOf("--value") + 1]; return v && v !== "0" ? buyPv(T2) : sellPv(); } return { success: true, data: { status: "BROADCASTED", txHash: "0xdead" } }; };
+  await runOnce(deps);
+  const st1 = JSON.parse(readFileSync(join(deps.stateDir, "positions.json"), "utf8"));
+  assert.equal(st1.positions[T].dust, true);
+  // dust 不佔 maxOpen，下一輪可買
+  deps.rows = async () => [row({ contractAddress: T2 })];
+  deps.now = NOW + 1000;
+  await runOnce(deps);
+  assert.equal(execs(), 1);
+});
+
+test("預演賣出：不過記 fail 且只推一次、有 approveTx 不判、外盤 quote 失敗記 fail、任何情況都沒有 execute／swap 呼叫", async () => {
+  const { deps, calls, st } = mk({ deps: { rows: async () => [] } });
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: { [T]: { symbol: "X", costWei: "1000000000000000", boughtAt: NOW - 3600e3, soldHalf: false } }, rejected: {}, closed: [] }));
+
+  // 內盤 quote-sell 失敗
+  deps.script = (cmd) => {
+    if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "1", tokenBalanceRaw: "1000" } } };
+    if (cmd === "quote-sell") return { success: false, error: "x" };
+    return { success: true, data: {} };
+  };
+  deps.baw = (a) => { calls.baw.push(a.join(" ")); return {}; };
+  const before = calls.baw.length;
+  await runOnce(deps);
+  assert.match(String(st().positions[T].sellCheck), /^fail/);
+  await runOnce(deps);
+  assert.equal(calls.notify.filter((t) => /預演賣出/.test(t)).length, 1);
+  assert.equal(calls.baw.filter((c) => /execute|swap/.test(c)).length, 0);
+
+  // 有 approveTx 不判
+  deps.script = (cmd) => {
+    if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "1", tokenBalanceRaw: "1000" } } };
+    if (cmd === "quote-sell") return { success: true, data: { estimate: { userReceives: "0.001" }, contracts: { core: CORE }, approveTx: { to: T, value: "0", inputData: "0x095ea7b3" }, tx: { to: CORE, value: "0", inputData: "0xsell" } } };
+    return { success: true, data: {} };
+  };
+  deps.baw = (a) => { calls.baw.push(a.join(" ")); return {}; };
+  await runOnce(deps);
+  assert.equal(st().positions[T].sellCheck, undefined);
+
+  // 外盤 quote 失敗記 fail
+  const { writeFileSync: ws } = await import("node:fs");
+  ws(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: { [T2]: { symbol: "Y", costWei: "1000000000000000", boughtAt: NOW - 3600e3, soldHalf: false } }, rejected: {}, closed: [] }));
+  deps.script = (cmd) => {
+    if (cmd === "info") return { success: true, data: { route: "market-order", isAgentIdExclusive: true, wallet: { tokenBalance: "1.5", tokenBalanceRaw: "1500000000000000000" } } };
+    return { success: true, data: {} };
+  };
+  deps.baw = (a) => { calls.baw.push(a.join(" ")); if (a[1] === "quote") return { success: false, error: "no" }; return {}; };
+  await runOnce(deps);
+  assert.match(String(st().positions[T2].sellCheck), /^fail/);
+  assert.equal(calls.baw.filter((c) => /execute|swap/.test(c)).length, 0);
+});
+
+test("戰績：台北 21 點後只推一次、20 點不推", async () => {
+  const { runOnce } = await import("../src/autotrade.mjs");
+  const { writeFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const now21 = Date.parse("2026-10-28T13:05:00.000Z");
+  const { deps, calls } = mk({ deps: { rows: async () => [] } });
+  deps.now = now21;
+  writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: {}, closed: [{ costWei: "1000", proceedsWei: "2000", closedAt: now21 }] }));
+  await runOnce(deps);
+  const pushed = calls.notify.filter((n) => String(n).includes("戰績"));
+  assert.equal(pushed.length >= 1, true);
+  const before = calls.notify.length;
+  await runOnce(deps);
+  const after = calls.notify.length;
+  assert.equal(after, before);
+});
+
+test("DEV 規則：devAddress 缺、devSellPercent > max、黑名單、重複 DEV、24h 過期、停損全賣後進黑名單", async () => {
+  // 直接測 devReject
+  const c = DEFAULTS.buy;
+  const stEmpty = { positions: {}, rejected: {}, closed: [], devSeen: {}, devBlack: {} };
+  assert.equal(devReject({ devSellPercent: 0 }, stEmpty, c, NOW), "dev 地址未知");
+  assert.equal(devReject({ devAddress: D, devSellPercent: 80 }, stEmpty, c, NOW), "dev 已賣");
+  assert.equal(devReject({ devAddress: D, devSellPercent: 0 }, { positions: {}, rejected: {}, closed: [], devSeen: {}, devBlack: { [D.toLowerCase()]: NOW - 1 } }, c, NOW), "黑名單 DEV");
+  const seen = { [D.toLowerCase()]: [{ token: "0xa", at: NOW }, { token: "0xb", at: NOW }, { token: "0xc", at: NOW }] };
+  assert.equal(devReject({ devAddress: D, devSellPercent: 10 }, { positions: {}, rejected: {}, closed: [], devSeen: seen }, c, NOW), "重複 DEV");
+  // 24h 過期：過期的被清掉就不算重複，且 devSellPercent 10 <=50 可過
+  const seenOld = { [D.toLowerCase()]: [{ token: "0xa", at: NOW - 25 * 3600e3 }, { token: "0xb", at: NOW - 25 * 3600e3 }, { token: "0xc", at: NOW - 25 * 3600e3 }] };
+  const stOld = { positions: {}, rejected: {}, closed: [], devSeen: seenOld, devBlack: {} };
+  // devReject 只看 seen，tryBuy 會先清理；這裡直接測試看現狀：若都過期，active length 0 應該不算重複
+  assert.equal(devReject({ devAddress: D, devSellPercent: 10 }, stOld, c, NOW), null);
+
+  // tryBuy 整合：devSeen 24h 過期後可買、devSellPercent >50 擋、黑名單擋、重複 DEV 擋
+  const { writeFileSync } = await import("node:fs");
+  // 過期 seen → 應該能買
+  {
+    const { deps, execs, st } = mk();
+    const s = { positions: {}, rejected: {}, closed: [], devSeen: { [D.toLowerCase()]: [{ token: "0xa", at: NOW - 25 * 3600e3 }] }, devBlack: {} };
+    writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify(s));
+    await runOnce(deps);
+    assert.equal(execs(), 1);
+  }
+  // devSellPercent >50 擋
+  {
+    const { deps, execs, st } = mk({ deps: { rows: async () => [row({ devSellPercent: 80 })] } });
+    await runOnce(deps);
+    assert.equal(execs(), 0);
+    assert.equal(st().rejected[T], "dev 已賣");
+  }
+  // 黑名單擋
+  {
+    const { deps, execs, st } = mk();
+    const s = { positions: {}, rejected: {}, closed: [], devSeen: {}, devBlack: { [D.toLowerCase()]: NOW } };
+    writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify(s));
+    await runOnce(deps);
+    assert.equal(execs(), 0);
+    assert.equal(st().rejected[T], "黑名單 DEV");
+  }
+  // 重複 DEV 擋
+  {
+    const { deps, execs, st } = mk();
+    const s = { positions: {}, rejected: {}, closed: [], devSeen: { [D.toLowerCase()]: [{ token: "0xa", at: NOW }, { token: "0xb", at: NOW }, { token: "0xc", at: NOW }] }, devBlack: {} };
+    writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify(s));
+    await runOnce(deps);
+    assert.equal(execs(), 0);
+    assert.equal(st().rejected[T], "重複 DEV");
+  }
+  // 停損全賣成功後進黑名單
+  {
+    let execOk = true;
+    const { deps, calls, st } = mk({
+      deps: { rows: async () => [] },
+      preview: () => sellPv(),
+      script: {
+        info: () => ({ success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "200000", tokenBalanceRaw: "200000000000000000000000" } } }),
+        "quote-sell": () => ({ success: true, data: { estimate: { userReceives: "0.001" }, contracts: { core: CORE }, approveTx: null, tx: { to: CORE, value: "0", inputData: "0xsell" } } }),
+      },
+    });
+    writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: { [T]: { symbol: "4Agent", costWei: "3000000000000000", boughtAt: NOW - 3600e3, soldHalf: false, dev: D.toLowerCase() } }, rejected: {}, closed: [] }));
+    deps.baw = (a) => { calls.baw.push(a.join(" ")); if (a[1] === "preview") return sellPv(); if (a[1] === "execute") return { success: true, data: { txHash: "0xdead" } }; return {}; };
+    // 價格跌到停損觸發全賣
+    deps.script = (cmd) => {
+      if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "200000", tokenBalanceRaw: "200000000000000000000000" } } };
+      // valWei 很低觸發停損
+      if (cmd === "quote-sell") return { success: true, data: { estimate: { userReceives: "0.001" }, contracts: { core: CORE }, approveTx: null, tx: { to: CORE, value: "0", inputData: "0xsell" } } };
+      return { success: true, data: {} };
+    };
+    // 讓 decide 判斷停損：valWei 1500000000000000 < cost*0.5
+    deps.script = (cmd) => {
+      if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "200000", tokenBalanceRaw: "200000000000000000000000" } } };
+      if (cmd === "quote-sell") return { success: true, data: { estimate: { userReceives: "0.0015" }, contracts: { core: CORE }, approveTx: null, tx: { to: CORE, value: "0", inputData: "0xsell" } } };
+      return { success: true, data: {} };
+    };
+    // 重新設定讓 valueOf 返回夠低的值
+    const bawOrig = deps.baw;
+    deps.baw = (a) => { calls.baw.push(a.join(" ")); if (a[1] === "preview") return sellPv(); if (a[1] === "execute") return { success: true, data: { txHash: "0xdead" } }; return {}; };
+    // 直接用 runOnce，valueOf 會從 quote-sell 拿 userReceives 轉換
+    await runOnce(deps);
+    assert.ok(st().devBlack && st().devBlack[D.toLowerCase()]);
+  }
+});
+
+test("devSeen：rows 有同一 dev 的 3 個盤 → 這輪一筆都不買、st.rejected 標「重複 DEV」；只有 2 個盤 → 照常買；重跑同一批 rows 不會重複記", async () => {
+  const D2 = D;
+  const rows3 = [
+    row({ contractAddress: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", devAddress: D2 }),
+    row({ contractAddress: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", devAddress: D2 }),
+    row({ contractAddress: "0xcccccccccccccccccccccccccccccccccccccccc", devAddress: D2 }),
+  ];
+  // rows 有同一 dev 的 3 個盤 → 這輪一筆都不買、st.rejected 標「重複 DEV」
+  {
+    let cur;
+    const { deps, execs, st } = mk({
+      deps: { rows: async () => rows3 },
+    });
+    deps.script = (cmd, p) => { cur = p?.token; if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalanceRaw: "1" } } }; if (cmd === "quote-buy") return { success: true, data: { tx: tx(), simulation: { ok: true } } }; return { success: true, data: {} }; };
+    const bawOrig = deps.baw;
+    deps.baw = (a) => (a[1] === "preview" ? buyPv(cur) : bawOrig(a));
+    await runOnce(deps);
+    assert.equal(execs(), 0);
+    const rej = st().rejected || {};
+    assert.equal(Object.values(rej).some((v) => String(v).includes("重複 DEV")), true);
+  }
+  // 只有 2 個盤 → 照常買
+  {
+    const rows2 = [
+      row({ contractAddress: "0xdddddddddddddddddddddddddddddddddddddddd", devAddress: D2 }),
+      row({ contractAddress: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", devAddress: D2 }),
+    ];
+    let cur;
+    const { deps, execs, st } = mk({
+      deps: { rows: async () => rows2 },
+    });
+    deps.script = (cmd, p) => { cur = p?.token; if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalanceRaw: "1" } } }; if (cmd === "quote-buy") return { success: true, data: { tx: tx(), simulation: { ok: true } } }; return { success: true, data: {} }; };
+    const bawOrig = deps.baw;
+    deps.baw = (a) => (a[1] === "preview" ? buyPv(cur) : bawOrig(a));
+    await runOnce(deps);
+    assert.equal(execs(), 1);
+  }
+  // 重跑同一批 rows 不會重複記
+  {
+    let cur;
+    const rows2 = [
+      row({ contractAddress: "0xffffffffffffffffffffffffffffffffffffffff", devAddress: D2 }),
+      row({ contractAddress: "0x1111111111111111111111111111111111111112", devAddress: D2 }),
+    ];
+    const { deps, execs, st } = mk({
+      deps: { rows: async () => rows2 },
+    });
+    deps.script = (cmd, p) => { cur = p?.token; if (cmd === "info") return { success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalanceRaw: "1" } } }; if (cmd === "quote-buy") return { success: true, data: { tx: tx(), simulation: { ok: true } } }; return { success: true, data: {} }; };
+    const bawOrig = deps.baw;
+    deps.baw = (a) => (a[1] === "preview" ? buyPv(cur) : bawOrig(a));
+    await runOnce(deps);
+    const exec1 = execs();
+    const seenLen1 = st().devSeen?.[D2.toLowerCase()]?.length;
+    await runOnce(deps);
+    const exec2 = execs();
+    const seenLen2 = st().devSeen?.[D2.toLowerCase()]?.length;
+    assert.equal(seenLen2, seenLen1); // 重跑同一批 rows 不會重複記
+    assert.equal(exec2, exec1 + 1);
+  }
+});
+

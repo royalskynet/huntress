@@ -26,6 +26,7 @@ export FAKE_PREVIEW=test/fixtures/preview-ok.json
 export AUDIT_FIXTURE=test/fixtures/audit-honeypot.json
 export INFO_FIXTURE=test/fixtures/info-sample.json
 export AUTOTRADE_ROWS=test/fixtures/autotrade-rows-empty.json
+export BRIEF_DIR="$T/brief"
 export X_EVERY_RUN=1 TG_DRY=1 TG_BOT_TOKEN=x TG_CHAT_ID=1
 
 bash run.sh

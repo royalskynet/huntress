@@ -236,6 +236,10 @@ async function main() {
           anyOk = true;
           if (!firstTxHash && txHash) firstTxHash = txHash;
           if (!firstStatus && data?.status) firstStatus = data.status;
+          if (txHash) {
+            mkdirSync(stateDir, { recursive: true });
+            appendFileSync(join(stateDir, "free-mints.jsonl"), JSON.stringify({ txHash, at: Date.now() }) + "\n");
+          }
         }
       } catch (e) {
         targetResult = { to: target.to, ok: false, selector: sel, reasons: [String(e?.message ?? e)] };

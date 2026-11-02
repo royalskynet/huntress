@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
+import { summarize, formatPnl } from "./pnl.mjs";
 
 function taipeiDate() {
   const t = new Date(Date.now() + 8 * 60 * 60 * 1000);
@@ -178,6 +179,21 @@ export async function handleUpdate(update, deps = defaultDeps()) {
     } catch {}
     const status = paused ? "暫停中" : "運作中";
     await deps.send(`狀態：${status}\nledger total: ${ledgerTotal}\nbuy total: ${buyTotal}\nspentWei: ${spentWei}`);
+    return;
+  }
+
+  if (t === "/pnl") {
+    const stateDir = deps.stateDir;
+    let st = { positions: {}, closed: [] };
+    try {
+      st = JSON.parse(readFileSync(join(stateDir, "positions.json"), "utf8"));
+    } catch {}
+    const now = Date.now();
+    const since24h = now - 24 * 3600 * 1000;
+    const s24 = summarize(st, since24h);
+    const sall = summarize(st, 0);
+    const msg = formatPnl(s24, "24h 戰績") + "\n\n" + formatPnl(sall, "全期戰績");
+    await deps.send(msg);
     return;
   }
 

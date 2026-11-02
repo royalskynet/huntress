@@ -1,10 +1,10 @@
-# 幣安 Agent 錢包自動打新機器人｜設計 v3（2026-10-29 台北）
+# 幣安 Agent 錢包自動打新機器人｜設計 v4（2026-11-01 台北）
 
 ## 目標（以 0xHelen／梭哈.AI 為基礎）
 
 1. **0 元 Mint／Agent ID 空投**：全自動。preview 沙箱預演過機械閘才 execute，回報 txHash。
 2. **要花錢的 Agent ID 專屬內盤**（Open Four、Flap ID Agent Curve）：autotrade 依寫死規則自動買；其餘候選只做投研簡報推 TG，等使用者回 `/buy <id> <BNB>` 再按鈕確認下單。
-3. **賣出與 TG 下單已上線**：持倉自動賣（漲到成本 2 倍賣一半、跌到 0.5 倍全賣、持有滿 24h 全賣）；NFT 白名單買單簿＋遞減底價自動賣；TG `/buy`、`/sell`、`/revoke` 皆為按鈕確認制。
+3. **賣出規則已升級至 v2（見下節）**：分批停利、高點回落、回本前後不同軌跡、免費 mint 持倉與預演賣出等機制。
 
 ## 和原教學的差別（為什麼改）
 
@@ -15,6 +15,38 @@
 | clawby yolo 壓步驟（0xarthur） | 不採用 | 第三方 skill 拿錢包權限、壓掉預覽確認 |
 
 Scott 的實測教訓照收：審計擋不了垃圾幣，真正的過濾是「分類＋上限」；Four.meme 熱盤搶不過科學家，只打冷開盤；Developer Mode 7 天沒外部交易自動關。
+
+## 交易規則 v2（借鏡 agentid-sniper）
+
+- **來源與授權**：借鏡 nancyc0813-maker/agentid-sniper 的賣出端設計（MIT），只借設計未抄碼。
+- **分批停利表**：tiers `[{x:2,bps:5000},{x:10,bps:4000},{x:20,bps:5000}]`（漲到成本 2 倍賣 50%、10 倍賣 40%、20 倍賣 50%，採用整數 bps 計算）。
+- **回本前／後高點回落與連 2 次確認**：以最高點 `peakPx` 計算回落比例，回本前 `trailPreBE:0.4`、回本後 `trailPostBE:0.6`，連續達 `trailConfirm:2` 次觸發全賣（原因「高點回落」）。
+- **停損只在回本前**：`stopLossX:0.5` 僅在未回本時生效，回本後不再停損。
+- **24h／168h 持有上限**：回本前最多持有 `maxHoldH:24` 小時全賣，回本後（含免費 mint）最長 `moonMaxHoldH:168` 小時全賣。
+- **外盤 quote＋`--slippage`**：外盤（market-order）賣出先做 quote 並帶 `--slippage <marketSlippagePct:15>`，quote 需成功且收 BNB>0 才進行 swap，swap 也帶相同 slippage。
+- **失敗退避**：賣出失敗記錄 `sellFail`，退避 `backoffMs(n)=min(2^(n-1),15)*60000`，`nextAt` 前跳過；僅 `n===1` 或 `n%5===0` 推播失敗訊息。
+- **零頭不賣**：預估收到金額 < `dustBNB:"0.0004"` 不賣；若為 `"all"` 則標記 `dust=true`，`maxOpen` 不計 `dust` 與 `kind:"free"` 持倉。
+- **免費 mint ERC20 經 `state/free-mints.jsonl` 進持倉與暖機**：`exec.mjs` 在 `execOk && txHash` 時 append 到 `free-mints.jsonl`；`autotrade.ingestFreeMints` 在每輪開頭處理，等 receipt（最長 30 分）、解析 ERC20 Transfer 到錢包才建立 `kind:"free"` 持倉，暖機 `freeWarmMin:3` 分鐘後才評估，高點回落用 `freeTrail:0.5` 連 2 次確認全賣，不跑停損與分批。
+- **預演賣出（只預演不送）**：`sellCheck` 僅做預演，內盤走 `quote-sell` 後 `sellGate` 檢查，外盤走 `market-order quote` 檢查，通過才記 `sellCheck:"ok"`，否則記 `fail:*` 並推播「⚠️ 預演賣出不過…可能賣不掉」，絕不 execute。
+- **`/pnl` 與每晚 21 點戰績**：新增 `src/pnl.mjs`（`summarize`/`formatPnl`），TG `/pnl` 回報 24h 與全期，`runOnce` 台北時間 ≥21 點且當日未送過才推播 24h 戰績並記 `pnlSentDate`。
+- **DEV 過濾四條（含 devSeen 每輪用 meme-rush rows 記）**：`devReject` 檢查 `dev 地址未知`、`devSellPercent > maxDevSellPct:50`（dev 已賣）、`st.devBlack[dev]`（黑名單 DEV）、`st.devSeen[dev]` 24h 內不同 token 數量 ≥ `maxDevLaunches24h:3`（重複 DEV）。`tryBuy` 每輪先用 rows 更新 `st.devSeen`（剔除 24h 前），過篩後才跑 `devReject`，買入記錄 `pos.dev`，停損或回本前高點回落全賣成功時加入 `st.devBlack`。
+- **「不做」清單與理由**：不做付費 mint 自動打、照抄 calldata、自動換 USDT（資金風險最高，sniper 才 3 天、無勝率數據）。用戶若想考慮需先影子記錄 2 週再議。
+
+## 付費 mint 實單路徑（2026-11-02 狀態）
+
+`src/flap.mjs` 已有完整買／賣／claim 三段：`runShadow` 篩選後命中寫 `logs/shadow.jsonl`，
+`paidShadow.live===true` 時才送真單（`buyGate` 過、餘額足才買），`checkShadow` 30 分鐘後回查倍數。
+
+現況（2026-11-02 03:2x 實測）：
+
+- `config.json`：`paidShadow{enabled:true, live:false, minHits:0}`、`flap.maxAgeMin:60`
+- 全掃 98 盤：BNB 計價 44 個，進度落在 3–40% 的只有 2 個（396、827 bps），且都超過 60 分鐘
+- 最年輕的盤 5859 分鐘（約 4 天）→ **60 分鐘內新盤 0 個**
+- 因此影子每輪都記「0 命中」，`logs/shadow.jsonl` 不存在
+
+上線條件：等平台出新盤，且該盤在 60 分鐘內進度達 3%。`live:false` 是刻意的——
+無人值守時不持有真實下單權限，等 `logs/run.log` 出現「會買」再開。
+
 
 ## 架構
 
@@ -31,7 +63,7 @@ Scott 的實測教訓照收：審計擋不了垃圾幣，真正的過濾是「�
         free mint 成功 → market-detect（找項目自家鏈上買單簿，只通知）→ sell 白名單自動賣
 
 交易與營運
-  autotrade（Agent ID 內盤自動買賣；Flap 內盤由 flap.mjs 影子掃描驗證）
+  autotrade（Agent ID 內盤自動買賣；分批停利／高點回落／免費 mint 持倉／預演賣出／DEV 過濾；Flap 內盤由 flap.mjs 影子掃描驗證）
   buy（TG /buy 確認買入）
   sell（NFT 白名單＋遞減底價自動賣；TG /sell 確認賣出）
   revoke（賣完撤授權；TG /revoke 按鈕）
@@ -39,7 +71,7 @@ Scott 的實測教訓照收：審計擋不了垃圾幣，真正的過濾是「�
   allowance-scan（每日授權掃描，未歸零才推 TG）
   blocked-digest（免費 mint 被閘擋下每小時彙整）
   recalc-cap（11-04 一次性重算 dailyMax 報告，推完自卸載）
-  bot（TG 指令與按鈕：/status /pause /resume /buy /sell /revoke）
+  bot（TG 指令與按鈕：/status /pnl /pause /resume /buy /sell /revoke）
   ask（TG 問答；headless claude 無工具，只讀預先抓好的資料）
 ```
 
@@ -50,7 +82,7 @@ Scott 的實測教訓照收：審計擋不了垃圾幣，真正的過濾是「�
 | `com.agentid.newlaunch` | `bin/launch.sh`（預設 `run.sh`） | 每 120 秒；RunAtLoad |
 | `com.agentid.watchx` | `bin/launch.sh xround.sh` | 每 600 秒 |
 | `com.agentid.bot` | `bin/bot.sh` → `bin/launch.sh bin/bot-poll.sh` | KeepAlive 常駐 long-poll |
-| `com.agentid.grokscan` | `bin/launch.sh grokscan.sh` | 每日 09:00 |
+| `com.agentid.grokscan` | `bin/launch.sh grokscan.sh` | 每日 09:00；**10-29 停用**（`launchctl disable`，扣 Grok 週額度；關鍵字併入 config `x.queries` 由 watchx 免費搜；恢復：`launchctl enable` 後 bootstrap） |
 | `com.agentid.flapwatch` | `bin/launch.sh bin/flap-watch.sh` | 每 1800 秒 |
 | `com.agentid.digest` | `bin/launch.sh bin/blocked-digest.sh` | 每 3600 秒 |
 | `com.agentid.recalc` | `bin/launch.sh bin/recalc-cap.sh` | 11-04 09:00 一次，推完自卸載 |
@@ -107,6 +139,7 @@ src/flap.mjs          Flap 讀鏈、影子掃描與買入閘
 src/ingest-grok.mjs   收 Grok issue：帳號進輪流池、新盤進 triage
 src/market-detect.mjs mint 後偵測項目自家買單簿並存檔
 src/notify.mjs        TG 推播
+src/pnl.mjs           戰績統計與格式化
 src/prune-extra.mjs   輪流池 7 天沒出新盤淘汰
 src/research.mjs      付費盤投研簡報
 src/revoke.mjs        撤授權 prepare／confirm
@@ -145,4 +178,5 @@ vendor/               binance-skills-hub sparse clone＋node_modules/@binance/ag
 
 - 免費 mint 也有成本：gas＋被釣魚合約騙簽。閘擋得住「預演看得到的」扣款與授權，擋不住預演之後才觸發的惡意邏輯；所以錢包只放 gas 錢。
 - 官方 skill 文件要求每筆 execute 前使用者確認。本設計對「0 元＋過閘」的類別事先一次授權，這是使用者的決定，不是官方建議。
+- v2 賣出路徑上線時尚未碰過真單（分批賣、外盤帶滑點、free-mints ingest、21 點戰績待首次實單驗證）。
 - 第二意見（Jev）：同意 0.55、風險 3.3/5，信心低。
