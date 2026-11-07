@@ -123,6 +123,18 @@ test("sellGate：只准減少這顆幣、收到 BNB", () => {
   assert.equal(sellGate(pv([{ contractAddress: T, change: -1 }, { contractAddress: T2, change: 5 }]), t0, T).ok, false);
 });
 
+test("sellGate：花掉 approve 額度（只減、對象 Core、這顆幣）放行，其餘授權變更擋", () => {
+  const t0 = { value: "0" };
+  const bc = [{ contractAddress: T, change: -1e23, tokenType: "Erc20" }, { contractAddress: NATIVE, change: 4e15, tokenType: "Native" }];
+  const al = (o = {}) => [{ tokenAddress: T, spender: CORE, preAmount: 8e23, postAmount: 0, ...o }];
+  assert.equal(sellGate(pv(bc, { allowanceChanges: al() }), t0, T, CORE).ok, true);
+  assert.equal(sellGate(pv(bc, { allowanceChanges: al() }), t0, T).ok, false);
+  assert.equal(sellGate(pv(bc, { allowanceChanges: al({ spender: T2 }) }), t0, T, CORE).ok, false);
+  assert.equal(sellGate(pv(bc, { allowanceChanges: al({ tokenAddress: T2 }) }), t0, T, CORE).ok, false);
+  assert.equal(sellGate(pv(bc, { allowanceChanges: al({ preAmount: 0, postAmount: 1e30 }) }), t0, T, CORE).ok, false);
+  assert.equal(sellGate(pv(bc, { allowanceChanges: [...al(), ...al()] }), t0, T, CORE).ok, false);
+});
+
 test("approveGate：只准授權這顆幣給 Core", () => {
   const ok = pv([], { allowanceChanges: [{ token: T, spender: CORE, amount: "100" }] });
   assert.equal(approveGate(ok, { to: T, value: "0" }, T, CORE).ok, true);

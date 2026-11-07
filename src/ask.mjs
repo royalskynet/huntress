@@ -31,7 +31,9 @@ function readOptional(path) {
 function runBawRead(args) {
   const res = spawnSync(bawBin, args, { encoding: "utf8" });
   if (res.status !== 0) {
-    throw new Error((res.stderr || "").trim() || `baw exited ${res.status}`);
+    const out = `${res.stdout ?? ""}${res.stderr ?? ""}`;
+    if (out.includes("NOT_LOGGED_IN")) throw new Error("NOT_LOGGED_IN");
+    throw new Error(out.trim().slice(0, 200) || `baw exited ${res.status}`);
   }
   return res.stdout ?? "";
 }
@@ -45,8 +47,10 @@ function main() {
     let body;
     try {
       body = runBawRead(cmd).trim();
-    } catch {
-      body = "（查詢失敗）";
+    } catch (e) {
+      body = e.message === "NOT_LOGGED_IN"
+        ? "（錢包登入已過期 NOT_LOGGED_IN，需用幣安 App 重掃 QR；不是餘額為零）"
+        : `（查詢失敗：${e.message}）`;
     }
     dataParts.push(`[${cmd.join(" ")}]\n${body}`);
   }

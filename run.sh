@@ -51,7 +51,7 @@ bal=$(printf '%s' "$bal_raw" | jq -r '[.data[]? | select(.binanceChainId=="56" a
 if ! [[ "$bal" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
   snippet=$(printf '%s' "$bal_raw" | tr '\n' ' ' | cut -c1-300)
   log "balance unknown ${snippet}"
-  nag BAL_UNKNOWN "${NAG_SEC:-21600}" "⚠️ 查不到 Agent 錢包 BNB 餘額，暫停打新（可能登出，要重掃 QR）"
+  nag BAL_UNKNOWN "${NAG_SEC:-3600}" "⚠️ 查不到 Agent 錢包 BNB 餘額，暫停打新（可能登出，要重掃 QR）"
   exit 0
 fi
 rm -f "$S/BAL_UNKNOWN" "$S/BAL_UNKNOWN.nag"

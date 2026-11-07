@@ -97,7 +97,8 @@ function commonChecks(pv, tx, r) {
 }
 
 // 賣：value 0、唯一減少的是這顆幣、收到的只有 BNB、無授權／權限變更、無風險、免 App 確認
-export function sellGate(pv, tx, token) {
+// 賣掉本身會花掉先前 approve 的額度（preAmount→postAmount 下降），所以允許「恰一筆、這顆幣、spender＝Core、只減不增」的授權變更；其餘仍擋
+export function sellGate(pv, tx, token, core) {
   const r = [];
   const { d, sim } = commonChecks(pv, tx, r);
   const c = changes(pv);
@@ -105,7 +106,13 @@ export function sellGate(pv, tx, token) {
   const gain = c.filter((x) => Number(x?.change) > 0);
   if (!(loss.length === 1 && lc(loss[0].contractAddress) === lc(token))) r.push("減少的不只這顆幣");
   if (!gain.every((x) => lc(x.contractAddress) === NATIVE)) r.push("收到非 BNB");
-  if (!(Array.isArray(sim?.allowanceChanges) && sim.allowanceChanges.length === 0)) r.push("有授權變更");
+  const al = sim?.allowanceChanges;
+  if (!Array.isArray(al)) r.push("有授權變更");
+  else if (al.length !== 0) {
+    const a = al[0];
+    const spend = al.length === 1 && /^0x[0-9a-f]{40}$/.test(lc(core)) && lc(a?.tokenAddress) === lc(token) && lc(a?.spender) === lc(core) && Number(a?.postAmount) <= Number(a?.preAmount);
+    if (!spend) r.push("有授權變更");
+  }
   return { ok: r.length === 0, reasons: r, requestId: r.length ? null : d.requestId };
 }
 
@@ -394,7 +401,7 @@ export async function sellCheck(deps, token, pos, info) {
     const tx = q?.data?.tx;
     try {
       const pv = preview(deps, deps.wallet, tx);
-      const g = sellGate(pv, tx, token);
+      const g = sellGate(pv, tx, token, q?.data?.contracts?.core);
       if (g.ok) {
         pos.sellCheck = "ok";
       } else {
@@ -561,7 +568,7 @@ async function trySell(deps, cfg, st) {
     // 不用 approve＝授權早已存在（舊持倉也是），同樣記下，結案時撤
     if (!pos.core && /^0x[0-9a-f]{40}$/.test(lc(q.data.contracts?.core))) pos.core = lc(q.data.contracts.core);
     const tx = q.data.tx;
-    const g = sellGate(preview(deps, deps.wallet, tx), tx, token);
+    const g = sellGate(preview(deps, deps.wallet, tx), tx, token, q.data.contracts?.core);
     if (!g.ok) {
       const n = recordFail();
       deps.log(`autosell ${token} 被閘：${g.reasons.join("、")}`);
