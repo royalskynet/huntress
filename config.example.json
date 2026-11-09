@@ -1,5 +1,6 @@
 {
   "dailyMax": 30,
+  "brief": {"enabled": false, "autoPost": false, "postsPerDay": 3},
   "perContractDaily": 1,
   "denylist": [],
   "x": {

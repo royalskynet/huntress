@@ -2,41 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { extractFirstJsonObject } from "../lib/extract-json.mjs";
 
 const queueDir = process.env.QUEUE_DIR || "queue";
 
 function readJsonFile(p) {
   return JSON.parse(fs.readFileSync(p, "utf8"));
-}
-
-function extractFirstJsonObject(text) {
-  const start = text.indexOf("{");
-  if (start < 0) return null;
-  let depth = 0;
-  let inStr = false;
-  let esc = false;
-  for (let i = start; i < text.length; i++) {
-    const c = text[i];
-    if (inStr) {
-      if (esc) {
-        esc = false;
-      } else if (c === "\\") {
-        esc = true;
-      } else if (c === '"') {
-        inStr = false;
-      }
-    } else {
-      if (c === '"') {
-        inStr = true;
-      } else if (c === "{") {
-        depth++;
-      } else if (c === "}") {
-        depth--;
-        if (depth === 0) return text.slice(start, i + 1);
-      }
-    }
-  }
-  return null;
 }
 
 function validate(obj) {

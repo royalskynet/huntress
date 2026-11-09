@@ -107,6 +107,13 @@ for f in "$Q"/x-*.json; do
     paid) mkdir -p "$Q/paid"; cp "$c" "$Q/paid/"
       tg "💰 付費項目（未下單）：$(jq -r '.why' <<<"$cand")  $(jq -r '.tweet.url // empty' "$c")
 要買就回 /buy $id <BNB 金額>（每筆上限 0.005）" ;;
+    *)
+      if [ "$(jq -r '.brief.enabled // false' "${CONFIG:-config.json}" 2>/dev/null)" = true ]; then
+        r=$(node src/brief.mjs "$Q/done/$(basename "$f")" 2>>"$L/run.log")
+        log "brief $f $r"
+        t=$(printf '%s' "$r" | jq -r '.text // empty' 2>/dev/null)
+        [ -n "$t" ] && tg "$t"
+      fi ;;
   esac
   [ -e "$c" ] && mv "$c" "$Q/done/"
 done

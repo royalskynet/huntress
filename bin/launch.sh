@@ -8,6 +8,6 @@ if [ -e "$HOME/.config/agentid-newlaunch/env" ]; then
 fi
 : "${TG_BOT_TOKEN:=$(cat "$HOME/.creds/kv/AGENTID_TG_TOKEN.txt" 2>/dev/null)}"
 export TG_BOT_TOKEN TG_CHAT_ID
-export TRIAGE_CMD="$ROOT/bin/triage-llm.sh" BAW_BIN="$ROOT/node_modules/.bin/baw" PATH="/opt/homebrew/bin:$HOME/.local/bin:/usr/bin:/bin"
+export TRIAGE_CMD="$ROOT/bin/triage-llm.sh" BRIEF_CMD="$ROOT/bin/triage-llm.sh" BAW_BIN="$ROOT/node_modules/.bin/baw" PATH="/opt/homebrew/bin:$HOME/.local/bin:/usr/bin:/bin"
 cd "$ROOT"
 exec /bin/bash "${1:-run.sh}"
