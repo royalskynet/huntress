@@ -1,5 +1,9 @@
 # Huntress
 
+> **Status: experimental, under active development.** The signal-trading line runs on a paper ledger only; no strategy
+> has passed the verdict gate yet. Code, thresholds and parameters change without notice — do not run it with real money
+> as-is. See [`DEVLOG.md`](DEVLOG.md) §10.
+
 A Telegram-driven bot for the **Binance Agentic Wallet** (`baw` CLI) that hunts new launches on BNB Chain:
 free (0 BNB) Agent ID mints run fully automatically, Agent ID bonding-curve tokens are bought and sold by fixed rules,
 and anything else that costs money is sent to Telegram as a research brief that you confirm with a button.
@@ -71,6 +75,8 @@ Not financial advice.
 ---
 
 # Huntress（中文）
+
+> **狀態：實驗開發中。** 訊號交易線只跑影子帳，判定閘還沒有策略過關；程式與門檻隨時會改，不要直接拿來跑真錢。詳見 [`DEVLOG.md`](DEVLOG.md) 第 10 節。
 
 幣安 Agentic Wallet（`baw` CLI）的 Telegram 打新機器人：0 元 Agent ID mint 全自動；Agent ID 專屬內盤依寫死規則自動買賣；其他要花錢的單推投研簡報到 TG，按鈕確認才下單。
 
