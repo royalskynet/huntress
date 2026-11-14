@@ -8,7 +8,8 @@ log() { printf '%s %s\n' "$(TZ=Asia/Taipei date '+%F %T')" "$*" >> "$L/run.log";
 # state 目錄與 helper 需在暫停檢查之前就位
 S=${STATE_DIR:-state}; mkdir -p "$S"
 # TG /pause 建的旗標；暫停時整輪不跑
-tg() { node src/notify.mjs "$1" >/dev/null 2>>"$L/run.log" || log "notify fail"; }
+tg() { local r; node src/notify.mjs "$1" >/dev/null 2>>"$L/run.log" || { r=$?; log "notify fail"; return "$r"; }; }
+. ./bin/lane.sh || exit 1
 nag() {
   local name="$1" interval="$2" msg="$3"
   local flag="$S/$name" nagfile="$S/$name.nag"
@@ -65,15 +66,21 @@ if awk -v b="$bal" -v m="${BAL_MAX_BNB:-0.05}" 'BEGIN{exit !(b>m)}'; then
 fi
 
 # 內盤自動買賣（規則寫死不經 LLM）；先跑，時間差就是錢
-node src/autotrade.mjs >> "$L/run.log" 2>&1 || log "autotrade fail"
+lane autotrade node src/autotrade.mjs >> "$L/run.log" 2>&1 || log "autotrade fail"
 # 付費 mint 影子單（只 preview＋記錄 logs/shadow.jsonl，永不下單）；失敗只記 log 不擋整輪
 if [ "$(jq -r '.paidShadow.enabled // false' "${CONFIG:-config.json}" 2>/dev/null)" = "true" ]; then
-  node src/flap.mjs shadow >> "$L/run.log" 2>&1 || log "paid shadow fail"
+  lane flap-shadow node src/flap.mjs shadow >> "$L/run.log" 2>&1 || log "paid shadow fail"
 fi
+# 訊號影子帳（只讀 baw signal list／quote，寫 logs/signal-shadow.jsonl，永不下單）；判定交 bin/shadow-verdict.mjs
+if [ "$(jq -r '.signalShadow.enabled // true' "${CONFIG:-config.json}" 2>/dev/null)" = "true" ]; then
+  lane signal-shadow node src/signal-shadow.mjs >> "$L/run.log" 2>&1 || log "signal shadow fail"
+fi
+# 判定閘每日一次，過關推 TG 等使用者批准實盤；腳本自己控頻
+bash bin/verdict-notify.sh >> "$L/run.log" 2>&1 || log "verdict notify fail"
 node src/sell.mjs auto-all 2>>"$L/run.log" | while IFS= read -r line; do printf '%s\n' "$line" >> "$L/run.log"; t=$(printf '%s' "$line" | jq -r '.text // empty' 2>/dev/null); [ -n "$t" ] && tg "$t"; done
 node src/allowance-scan.mjs daily 2>>"$L/run.log" | while IFS= read -r line; do printf '%s\n' "$line" >> "$L/run.log"; t=$(printf '%s' "$line" | jq -r '.text // empty' 2>/dev/null); [ -n "$t" ] && tg "$t"; done
 
-node src/watch-memerush.mjs --once >> "$L/run.log" 2>&1 || log "watch-memerush fail"
+lane watch-memerush node src/watch-memerush.mjs --once >> "$L/run.log" 2>&1 || log "watch-memerush fail"
 # X 用登入中的帳號抓，每 10 分鐘一次免被限流
 # X 推文由獨立 job com.agentid.watchx 每 600s 掃（xround.sh），429 退避不擋這裡；X_EVERY_RUN=1 只給測試同輪跑
 [ "${X_EVERY_RUN:-0}" = 1 ] && { node src/watch-x.mjs --once >> "$L/run.log" 2>&1 || log "watch-x fail"; }
@@ -111,8 +118,14 @@ for f in "$Q"/x-*.json; do
       if [ "$(jq -r '.brief.enabled // false' "${CONFIG:-config.json}" 2>/dev/null)" = true ]; then
         r=$(node src/brief.mjs "$Q/done/$(basename "$f")" 2>>"$L/run.log")
         log "brief $f $r"
+        stage=$(printf '%s' "$r" | jq -r '.stage // empty' 2>/dev/null)
         t=$(printf '%s' "$r" | jq -r '.text // empty' 2>/dev/null)
-        [ -n "$t" ] && tg "$t"
+        # cli-skill 判定不可靠（path-as-username 主機誤報居多），只記 log 不推 TG
+        if [ "$stage" = "cli-skill" ]; then
+          log "skip cli-skill notify $t"
+        elif [ -n "$t" ]; then
+          tg "$t"
+        fi
       fi ;;
   esac
   [ -e "$c" ] && mv "$c" "$Q/done/"

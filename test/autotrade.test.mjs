@@ -487,3 +487,31 @@ test("devSeen：rows 有同一 dev 的 3 個盤 → 這輪一筆都不買、st.r
   }
 });
 
+
+test("停損平倉：closed 記 exitReason sl 與 proceedsSource", async () => {
+  const { writeFileSync } = await import("node:fs");
+  let raw = "200000000000000000000000";
+  const { deps, calls, st } = mk({
+    deps: { rows: async () => [] },
+    script: {
+      info: () => ({ success: true, data: { route: "contract-call", isAgentIdExclusive: true, wallet: { tokenBalance: "1", tokenBalanceRaw: raw } } }),
+      "quote-sell": () => ({ success: true, data: { estimate: { userReceives: "0.0015" }, approveTx: null, tx: { to: CORE, value: "0", inputData: "0xsell" } } }),
+    },
+  });
+  deps.baw = (a) => {
+    calls.baw.push(a.join(" "));
+    if (a[1] === "preview") return sellPv();
+    if (a[1] === "execute") return { success: true, data: { txHash: "0xdead" } };
+    return {};
+  };
+  writeFileSync(join(deps.stateDir, "positions.json"), JSON.stringify({ positions: { [T]: { symbol: "4Agent", costWei: "3000000000000000", boughtAt: NOW - 3600e3, soldHalf: false } }, rejected: {}, closed: [] }));
+  await runOnce(deps);
+  assert.equal(st().positions[T].exitReason, "sl");
+  // 下一輪餘額歸零 → 結案進 closed
+  raw = "0";
+  await runOnce(deps);
+  const c = st().closed.find((x) => x.token === T);
+  assert.ok(c);
+  assert.equal(c.exitReason, "sl");
+  assert.equal(c.proceedsSource, "estimate");
+});

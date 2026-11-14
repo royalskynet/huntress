@@ -122,6 +122,10 @@ bin/blocked-digest.sh 免費 mint 被擋下的每小時彙整
 bin/bot-poll.sh       TG long-poll 入口
 bin/bot.sh            launchd 常駐 bot 的啟動殼
 bin/flap-shadow-run.sh Flap 影子跑（只 preview）並推彙總
+bin/lane.sh           lane <名稱> <指令>：記連續失敗，連敗 6 輪且距上次 24h 推 TG（狀態 state/lane-fail.json）
+bin/shadow-verdict.mjs 訊號影子帳判定閘（門檻 v2）：每個 strategyVersion 在 n≥30／60／100 各判一次、α 按 20/30/50% 拆分，任一次過即鎖定（state/verdict-ledger.json，gate:2），exit 0 通過／1 無／2 格式錯
+src/signal-shadow.mjs 訊號影子帳：baw signal list 進場、quote 估值出場，寫 logs/signal-shadow.jsonl（v3 階段 1）；帶 Token Fee 的訊號另記 <strategyId>@v1-tax 帳（signalShadow.taxVersion，設 null 恢復 reject tax）；baw 報價不含 Flap 代幣稅，tax 帳進場用 cast 讀 TaxTokenHelper.getTaxTokenInfoV2 存買／賣稅率，估值扣兩道稅，讀不到寫 reject taxread
+src/pnl.mjs           損益帳：只有 proceedsSource=chain 計入可信統計
 bin/flap-watch.sh     Flap 回溫監看的啟動殼
 bin/launch.sh         帶入環境變數與憑證後執行指定腳本
 bin/recalc-cap.py     dailyMax 重算報告內容

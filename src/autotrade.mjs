@@ -243,6 +243,8 @@ async function tryBuy(deps, cfg, st) {
       save(join(stateDir, "positions.json"), st);
       const ex = execute(deps, g.requestId);
       st.positions[token].txHash = ex?.data?.txHash ?? null;
+      const buyGas = gasWeiOf(ex);
+      if (buyGas != null) st.positions[token].buyGasWei = buyGas;
       deps.log(`autobuy ${token} ${JSON.stringify(ex)}`);
       await deps.notify(ex?.success
         ? `🟢 自動買入 ${row.symbol} ${fromWei(txValue)} BNB（最少收 ${q.data.minTokenOut}，滑點 ${q.data.slippagePercent}%）\n${token}\ntx ${ex.data?.txHash ?? ex.data?.status}`
@@ -330,6 +332,27 @@ export function applySell(pos, how) {
   pos.tierIdx = t + 1;
   pos.soldHalf = true;
   pos.dropHits = 0;
+}
+
+// decide() 的理由字串 → 平倉原因；對不到就 manual
+export function exitReasonOf(why) {
+  const s = String(why ?? "");
+  if (s.includes("漲到成本")) return "tp";
+  if (s.includes("高點回落")) return "trail";
+  if (s.includes("跌到成本")) return "sl";
+  if (s.includes("持有滿")) return "timeout";
+  return "manual";
+}
+
+// ponytail: baw 回傳的 gas 欄位未實測，先認這幾個常見名，拿不到就不寫
+function gasWeiOf(r) {
+  const v = r?.data?.gasWei ?? r?.data?.gasFeeWei ?? r?.data?.feeWei ?? r?.data?.gasUsedWei;
+  if (v == null) return null;
+  try { return BigInt(v).toString(); } catch { return null; }
+}
+function addGas(pos, key, v) {
+  if (v == null) return;
+  try { pos[key] = (BigInt(pos[key] ?? "0") + BigInt(v)).toString(); } catch {}
 }
 
 const ERC20_TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -469,6 +492,7 @@ async function trySell(deps, cfg, st) {
           }
         }
         const rec = { token, ...pos, closedAt: deps.now };
+        if (rec.exitReason == null) rec.exitReason = "manual";
         if (revoked !== null) rec.revoked = revoked;
         st.closed.push(rec);
         delete st.positions[token];
@@ -514,6 +538,9 @@ async function trySell(deps, cfg, st) {
       deps.log(`autosell ${token} swap ${JSON.stringify(r)}`);
       if (r?.success) {
         delete pos.sellFail;
+        pos.exitReason = exitReasonOf(why);
+        pos.proceedsSource = "quote";
+        addGas(pos, "sellGasWei", gasWeiOf(r));
         try {
           if (pos.proceedsWei == null) pos.proceedsWei = "0";
           const recv = r?.data?.toCoinAmount ?? r?.data?.amount ?? r?.data?.receiveAmount;
@@ -579,6 +606,9 @@ async function trySell(deps, cfg, st) {
     deps.log(`autosell ${token} ${JSON.stringify(ex)}`);
     if (ex?.success) {
       delete pos.sellFail;
+      pos.exitReason = exitReasonOf(why);
+      pos.proceedsSource = "estimate";
+      addGas(pos, "sellGasWei", gasWeiOf(ex));
       try {
         if (pos.proceedsWei == null) pos.proceedsWei = "0";
         const recv = q?.data?.estimate?.userReceives;

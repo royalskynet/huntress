@@ -55,8 +55,11 @@ export function parseDetail(hex) {
 
 export function parseSettings(hex) {
   const w = words(hex);
+  if (w.length < 1) throw new Error("settings too short");
   const t = Number(w[0] / 32n);
+  if (!Number.isInteger(t) || t < 0 || t >= w.length) throw new Error("settings bad offset");
   const l = t + Number(w[t] / 32n);
+  if (!Number.isInteger(l) || l < 0 || l + 11 >= w.length) throw new Error("settings too short");
   return {
     quoteToken: addr(w[t + 1]).toLowerCase(),
     buyTaxBps: Number(w[l + 5]),
@@ -120,11 +123,33 @@ export function screenFlap(d, s, ageMin, cfg) {
   if (!Number.isFinite(ageMin) || ageMin > Number(c.maxAgeMin)) return `上線 ${ageMin} 分鐘`;
   const buyTax = s?.buyTaxBps;
   const sellTax = s?.sellTaxBps;
+  const maxWallet = s?.maxWalletBps;
   const maxTax = Number(c.maxTaxBps);
-  if (typeof buyTax !== "number" || typeof sellTax !== "number" || buyTax > maxTax || sellTax > maxTax) {
+  if (!Number.isFinite(buyTax) || !Number.isFinite(sellTax) || !Number.isFinite(maxWallet)) {
+    return `稅 ${buyTax}/${sellTax}/${maxWallet} tax 非有限`;
+  }
+  if (buyTax > maxTax || sellTax > maxTax) {
     return `稅 ${buyTax}/${sellTax}`;
   }
   return null;
+}
+
+// 餘額變更金額：只接受有限數字或十進位數字字串，其他（""、false、[]、缺漏）回 null
+export function parseAmount(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v)) return Number(v);
+  return null;
+}
+
+// preview 回應欄位齊全才算讀取成功；欄位缺漏屬暫時故障，業務拒絕（模擬未過、有風險）另計
+export function previewComplete(pv) {
+  const d = pv?.success === true && pv?.data?.success !== false ? pv.data : null;
+  const sim = d?.simulationResult;
+  return !!d && typeof d.requestId === "string" && d.requestId !== ""
+    && typeof sim?.simulationCode === "string"
+    && Array.isArray(sim.authorityChanges) && Array.isArray(sim.allowanceChanges) && Array.isArray(sim.balanceChanges)
+    && sim.balanceChanges.every((c) => typeof c?.contractAddress === "string" && c.contractAddress !== "" && parseAmount(c.change ?? c.amount) !== null)
+    && Array.isArray(d.risks?.riskDetails) && typeof d.requireConfirmation === "boolean";
 }
 
 export function buyGate(pv, tx, ctx) {
@@ -181,12 +206,10 @@ export function buyGate(pv, tx, ctx) {
   else {
     const ch = bc[0];
     if (String(ch?.contractAddress ?? "").toLowerCase() !== NATIVE) reasons.push("非 BNB 資產變更");
-    let change;
-    try { change = ch?.change ?? ch?.amount; } catch { change = 0; }
-    let deducted;
-    try { deducted = BigInt(Math.round(-Number(change))); } catch { deducted = 0n; }
-    // use BigInt from rounded number already; but for large use Math.round may lose precision. Accept uses BigInt(Math.round(-change)).
-    if (!(deducted <= vw)) reasons.push("付出超過 valueWei");
+    const change = parseAmount(ch?.change ?? ch?.amount);
+    // 金額缺漏或解析不了一律拒絕，不回退成 0（fail-closed）
+    if (change === null) reasons.push("餘額變更金額無法解析");
+    else if (!(BigInt(Math.round(-change)) <= vw)) reasons.push("付出超過 valueWei");
   }
 
   const ok = reasons.length === 0;
@@ -299,12 +322,18 @@ export function claimGate(pv, tx, ctx) {
 }
 
 function loadJson(p, dflt) {
-  try { return JSON.parse(readFileSync(p, "utf8")); } catch { return dflt; }
+  try {
+    return JSON.parse(readFileSync(p, "utf8"));
+  } catch (e) {
+    if (e?.code === "ENOENT") return dflt;
+    throw e;
+  }
 }
 
 function saveJson(p, v) {
-  writeFileSync(p + ".tmp", JSON.stringify(v, null, 2));
-  renameSync(p + ".tmp", p);
+  const tmp = `${p}.tmp.${process.pid}`;
+  writeFileSync(tmp, JSON.stringify(v, null, 2));
+  renameSync(tmp, p);
 }
 
 export async function runShadow(deps) {
@@ -321,13 +350,28 @@ export async function runShadow(deps) {
   if (!state.seen) state.seen = {};
   if (!state.checked) state.checked = {};
 
-  const totalPage = parsePage(deps.call(READER, encPage(0, 1)));
+  let listFailed = false;
+  let totalPage;
+  try {
+    totalPage = parsePage(deps.call(READER, encPage(0, 1)));
+  } catch (e) {
+    listFailed = true;
+    deps.log(`flap 市場列表讀取失敗 ${e?.message ?? e}`);
+    totalPage = { total: 0 };
+  }
   const total = totalPage.total;
   const start = Math.max(0, total - Number(cfg.scanLast));
   const markets = [];
   const marketSet = new Set();
   for (let cur = start; cur < total; ) {
-    const pg = parsePage(deps.call(READER, encPage(cur, 16)));
+    let pg;
+    try {
+      pg = parsePage(deps.call(READER, encPage(cur, 16)));
+    } catch (e) {
+      listFailed = true;
+      deps.log(`flap 市場列表讀取失敗 ${e?.message ?? e}`);
+      break;
+    }
     for (const m of pg.markets) {
       if (!marketSet.has(m)) { marketSet.add(m); markets.push(m); }
     }
@@ -338,14 +382,18 @@ export async function runShadow(deps) {
   const seen = state.seen;
   const counts = {};
   let blocked = 0;
+  let attempted = 0;
+  let failed = 0;
 
   for (const m of markets) {
     if (seen[m]) continue;
+    attempted++;
     let detail, settings;
     try {
       detail = parseDetail(deps.call(READER, encDetail(m)));
       settings = parseSettings(deps.call(READER, encSettings(m)));
     } catch (e) {
+      failed++;
       deps.log(`flap ${m} 讀取失敗 ${e?.message ?? e}`);
       continue;
     }
@@ -362,8 +410,13 @@ export async function runShadow(deps) {
       const minShares = (quote.shares * (10000n - BigInt(cfg.slippageBps))) / 10000n;
       const tx = { to: PORTAL, value: String(valueWei), inputData: encBuy(m, minShares) };
       const pv = deps.preview(wallet, PORTAL, tx.value, tx.inputData);
+      // data 缺 requestId 或 simulationResult 視同 preview 失敗，下輪重試
+      const previewOk = previewComplete(pv);
       const g = buyGate(pv, tx, { market: m, shares: quote.shares, valueWei, slippageBps: cfg.slippageBps });
-      if (g.ok) {
+      if (!previewOk) {
+        failed++;
+        deps.log(`flap ${m} preview 失敗`);
+      } else if (g.ok) {
         const row = { at: now, market: m, progressBps: detail.progressBps, holders: detail.holders, ageMin: Number(ageMin.toFixed(1)), valueWei: String(valueWei), shares: String(quote.shares), minShares: String(minShares) };
         appendFileSync(join(logDir, "shadow.jsonl"), JSON.stringify(row) + "\n");
         deps.log(`flap shadow ${m} 會買 進度 ${detail.progressBps}% 持幣 ${detail.holders}`);
@@ -373,6 +426,7 @@ export async function runShadow(deps) {
         seen[m] = now;
       }
     } catch (e) {
+      failed++;
       deps.log(`flap ${m} 讀取失敗 ${e?.message ?? e}`);
     }
   }
@@ -614,6 +668,10 @@ export async function runShadow(deps) {
     }
   } catch (e) {}
 
+  if (listFailed || (attempted > 0 && failed === attempted)) {
+    process.exitCode = 1;
+  }
+
   saveJson(statePath, { seen, checked: state.checked });
 }
 
@@ -636,11 +694,15 @@ export async function checkShadow(deps) {
     entries = readFileSync(shadowPath, "utf8").trim().split("\n").filter(Boolean).map((x) => JSON.parse(x));
   } catch { entries = []; }
 
+  let attempted = 0;
+  let failed = 0;
   for (const e of entries) {
     const m = e.market;
     if (checked[m]) continue;
     if (now - Number(e.at) < Number(cfg.checkAfterMin) * 60000) continue;
+    attempted++;
     let multiple;
+    let valid = false;
     try {
       const q = parseQuote(deps.call(PORTAL, encQuoteBuy(m, deps.wallet, valueWei)));
       const entryShares = BigInt(e.shares);
@@ -649,19 +711,24 @@ export async function checkShadow(deps) {
       const intPart = scaled / 100n;
       const fracPart = scaled % 100n;
       multiple = `${intPart}.${String(fracPart).padStart(2, "0")}`;
+      valid = true;
     } catch (err) {
       try {
         const d = parseDetail(deps.call(READER, encDetail(m)));
-        multiple = d.phase !== 1 ? "graduated" : "error";
+        // 仍在內盤卻報價失敗是暫時故障，不標 checked，下輪重試
+        multiple = "graduated";
+        valid = d.phase !== 1;
       } catch (e2) {
-        multiple = "error";
+        valid = false;
       }
     }
+    if (!valid) { failed++; continue; }
     appendFileSync(join(logDir, "shadow-check.jsonl"), JSON.stringify({ at: now, market: m, multiple }) + "\n");
     checked[m] = true;
   }
 
   saveJson(statePath, { seen: state.seen ?? {}, checked });
+  if (attempted > 0 && failed === attempted) process.exitCode = 1;
 }
 
 function defaultDeps() {
@@ -692,12 +759,12 @@ function defaultDeps() {
     logDir,
     call: (to, data) => {
       const r = spawnSync("cast", ["call", "--rpc-url", rpc, to, data], { encoding: "utf8" });
-      if (r.status !== 0) throw new Error((r.stderr || "").trim() || `exit ${r.status}`);
+      if (r.status !== 0) throw new Error(`cast ${r.error?.code ?? ""} status=${r.status} signal=${r.signal} ${(r.stderr || "").trim()}`);
       return String(r.stdout ?? "").trim();
     },
     blockTs: (n) => {
       const r = spawnSync("cast", ["block", String(n), "--field", "timestamp", "--rpc-url", rpc], { encoding: "utf8" });
-      if (r.status !== 0) throw new Error((r.stderr || "").trim() || `exit ${r.status}`);
+      if (r.status !== 0) throw new Error(`cast ${r.error?.code ?? ""} status=${r.status} signal=${r.signal} ${(r.stderr || "").trim()}`);
       return Number(String(r.stdout ?? "").trim());
     },
     preview: (from, to, value, data) => baw(["contract-call", "preview", "--binanceChainId", "56", "--from", from, "--to", to, "--value", value, "--inputData", data, "--json"]),
@@ -751,6 +818,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } else if (paidShadowCfg.live === false) {
       deps.cfg.live = false;
     }
+    deps.execute = () => { throw new Error("shadow 禁止 execute"); };
     await runShadow(deps);
     await checkShadow(deps);
   }

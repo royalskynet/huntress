@@ -17,7 +17,16 @@ sources (zero-token)        meme-rush poller · X account rotation · optional G
 trading               autotrade (rules) · sell (NFT order books, decaying floor) · revoke (every approve gets undone)
 ops                   balance gate · gas budget · allowance scan · hourly digest · Telegram bot (/status /pause /buy /sell /revoke)
 Q&A                   headless `claude -p --tools ""` — zero tools, fed pre-fetched read-only data
+shadow                baw signals → paper ledger per strategy version → verdict gate → Telegram → human approves live
 ```
+
+**Shadow ledger before real money.** `src/signal-shadow.mjs` paper-trades baw `signal list` with read-only quotes
+(never signs) and writes `logs/signal-shadow.jsonl`, one virtual account per `strategyId@version`. Tokens with a
+transfer tax go to a separate `@v1-tax` account; their tax rates are read on-chain (Flap `TaxTokenHelper`) and deducted,
+because baw quotes leave the tax out. `bin/shadow-verdict.mjs` is the pass gate: a group-sequential test with three
+looks (n ≥ 30/60/100 trades, ≥ 7/10/14 days) and a total α of 0.05 Bonferroni-split across versions, then across the looks; any look passing locks
+the version as passed. `bin/verdict-notify.sh` runs it once a day and pushes Telegram when a version passes. Going live
+stays a manual decision.
 
 - Design: [`DESIGN.md`](DESIGN.md) (Chinese)
 - Dev log and lessons: [`DEVLOG.md`](DEVLOG.md) (Chinese) — 80 commits in four days, ten takeaways at the end
@@ -66,6 +75,8 @@ Not financial advice.
 幣安 Agentic Wallet（`baw` CLI）的 Telegram 打新機器人：0 元 Agent ID mint 全自動；Agent ID 專屬內盤依寫死規則自動買賣；其他要花錢的單推投研簡報到 TG，按鈕確認才下單。
 
 核心規則：**LLM 只提案，寫死的機械閘決定。** 閘只讀 baw `preview` 鏈上預演的結構化欄位，不認得就拒絕；代幣名稱、描述、推文都進不了決策。
+
+**先影子帳，後真錢。** 訊號影子帳只讀報價、不簽交易，每個策略版本一個虛擬帳；帶轉帳稅的代幣另開 tax 帳，鏈上讀稅率並扣除（baw 報價不含稅）。判定閘用三次檢視的分組序貫檢定（30／60／100 筆、7／10／14 天，α 以 Bonferroni 拆分），每日跑一次，過關推 Telegram，開實盤仍由人決定。
 
 - 設計：[`DESIGN.md`](DESIGN.md)
 - 開發日誌與教學重點：[`DEVLOG.md`](DEVLOG.md)
