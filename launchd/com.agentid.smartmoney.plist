@@ -3,23 +3,20 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.agentid.recalc</string>
+  <string>com.agentid.smartmoney</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
     <string>/Users/you/dev/agentid-newlaunch/bin/launch.sh</string>
-    <string>bin/recalc-cap.sh</string>
+    <string>bin/smartmoney.sh</string>
   </array>
   <key>StartCalendarInterval</key>
-  <dict>
-    <key>Month</key><integer>11</integer>
-    <key>Day</key><integer>4</integer>
-    <key>Hour</key><integer>9</integer>
-    <key>Minute</key><integer>0</integer>
-  </dict>
+  <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>15</integer></dict>
+  <key>RunAtLoad</key>
+  <false/>
   <key>StandardOutPath</key>
-  <string>/Users/you/dev/agentid-newlaunch/logs/recalc.log</string>
+  <string>/Users/you/dev/agentid-newlaunch/logs/smartmoney.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/you/dev/agentid-newlaunch/logs/recalc.log</string>
+  <string>/Users/you/dev/agentid-newlaunch/logs/smartmoney.log</string>
 </dict>
 </plist>
